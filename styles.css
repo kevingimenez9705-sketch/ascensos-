@@ -79,6 +79,27 @@ main#app.fade-in { animation: fadeInUp 0.22s ease; }
   background: #fff;
   border: 1px solid var(--card-border);
 }
+
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.sync-pill-ok {
+  background: #e3f7e8;
+  color: #1a7f3c;
+}
+.sync-pill-error {
+  background: #fff2d9;
+  color: #8a5a00;
+  cursor: pointer;
+}
+.sync-pill-error u { text-decoration-thickness: 1px; }
 .brand-pill:empty { display: none; }
 
 /* ---------- Layout ---------- */

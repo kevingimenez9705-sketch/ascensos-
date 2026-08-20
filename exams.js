@@ -1,96 +1,144 @@
 // exams.js
 // Persistencia de los exámenes de ascenso cargados por local.
 //
-// Todo queda en localStorage del navegador: no hay backend ni conexión a
-// ningún servicio. Los datos son propios de cada navegador/dispositivo
-// donde se cargan.
+// Backend: una Google Sheet, vía el Web App de Google Apps Script
+// (ver google-apps-script/Code.gs). Es la única fuente de verdad
+// compartida: todos los que entran a la app, desde cualquier
+// navegador/dispositivo, ven los mismos exámenes.
 //
-// La clave de cada examen depende solo de marca + nombre del local (no de
-// en qué zonal/regional está colgado ese local en el organigrama). Así, si
-// después se mueve el local a otra zonal (ver overrides.js), los exámenes
-// ya cargados lo siguen sin perderse. regionalId/zonalId se guardan igual
-// en el registro, pero solo como dato informativo de "dónde estaba" al
-// cargarlo.
+// Como respaldo, cada navegador guarda una copia local de la última
+// lectura exitosa (localStorage). Si en algún momento no se puede
+// contactar a la planilla (sin internet, script caído, etc.) se muestra
+// esa copia en vez de dejar la pantalla vacía, y se avisa en pantalla
+// que los datos pueden estar desactualizados.
+//
+// La clave de cada examen depende solo de marca + nombre del local (no
+// de en qué zonal/regional está colgado ese local en el organigrama).
+// Así, si después se mueve el local a otra zonal (ver overrides.js), los
+// exámenes ya cargados lo siguen sin perderse.
+
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwWQud8u_W8V3jH3WmpGOrjMwddUEME2KCnoHQytaXvUV1vlghOjAyjcfaCv5VBUtPg/exec";
 
 const ExamStore = (function () {
-  const STORAGE_KEY = "campusAscensos.examenes.v1";
+  const LOCAL_BACKUP_KEY = "campusAscensos.examenes.v1";
 
-  function safeParseArray(json) {
+  let exams = [];
+  let loaded = false;
+  let lastError = null;
+  let loadPromise = null;
+
+  function localKey(brandId, localName) {
+    return `${brandId}/${slugify(localName)}`;
+  }
+
+  function withLocalKey(record) {
+    return Object.assign({}, record, { localKey: localKey(record.brandId, record.localName) });
+  }
+
+  function loadBackup() {
     try {
-      const parsed = JSON.parse(json);
+      const raw = localStorage.getItem(LOCAL_BACKUP_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }
   }
 
-  function load() {
+  function saveBackup(list) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? safeParseArray(raw) : [];
+      localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(list));
     } catch (e) {
-      // localStorage no disponible (modo privado, navegador viejo, etc.)
-      return [];
+      // sin espacio/no disponible: no es grave, es solo el respaldo offline
     }
   }
 
-  function persist(list) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (e) {
-      // Si falla el guardado (cuota llena, etc.) los datos quedan solo en
-      // memoria durante esta sesión de la página.
-    }
-  }
-
-  function localKey(brandId, localName) {
-    return `${brandId}/${slugify(localName)}`;
-  }
-
-  let exams = load();
-
-  // Migración: versiones anteriores guardaban la clave como
-  // brandId/regionalId/zonalId/localSlug. Si encontramos registros viejos
-  // (localKey con más de 2 segmentos) los recalculamos a la clave nueva
-  // para no perder los exámenes ya cargados.
-  (function migrateLegacyKeys() {
-    let changed = false;
-    exams = exams.map((e) => {
-      const parts = String(e.localKey || "").split("/");
-      if (parts.length > 2 && e.brandId && e.localName) {
-        changed = true;
-        return Object.assign({}, e, { localKey: localKey(e.brandId, e.localName) });
-      }
-      return e;
+  // POST con Content-Type text/plain a propósito: evita el preflight CORS
+  // que Apps Script no responde. El body sigue siendo JSON; Code.gs lo
+  // parsea igual.
+  async function post(action, extra) {
+    const res = await fetch(SHEET_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ action }, extra)),
     });
-    if (changed) persist(exams);
-  })();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "la planilla devolvió un error");
+    return data;
+  }
+
+  async function fetchAll() {
+    const res = await fetch(SHEET_API_URL, { method: "GET" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "la planilla devolvió un error");
+    return data.exams.map(withLocalKey);
+  }
+
+  // Sube a la planilla los exámenes que hayan quedado guardados en este
+  // navegador ANTES de conectar la planilla (o cargados mientras no había
+  // conexión) y que todavía no estén ahí. Se fija por id, así que es
+  // seguro llamarla en cada carga: si ya está todo subido, no hace nada.
+  async function migratePending(remoteExams) {
+    const local = loadBackup();
+    if (!local.length) return;
+    const remoteIds = new Set(remoteExams.map((e) => e.id));
+    const missing = local.filter((e) => e.id && !remoteIds.has(e.id));
+    for (const record of missing) {
+      try {
+        await post("add", { record });
+        remoteExams.push(withLocalKey(record));
+      } catch (e) {
+        // si falla uno, seguimos con los demás; se reintenta en la próxima carga
+      }
+    }
+  }
+
+  // Trae los exámenes de la planilla (una sola vez; llamados repetidos
+  // devuelven la misma promesa ya en curso/resuelta). Hay que esperarla
+  // antes de la primera renderización de la app.
+  function ensureLoaded() {
+    if (loadPromise) return loadPromise;
+    loadPromise = (async () => {
+      try {
+        const remote = await fetchAll();
+        await migratePending(remote);
+        exams = remote;
+        loaded = true;
+        lastError = null;
+        saveBackup(exams);
+      } catch (err) {
+        lastError = err;
+        exams = loadBackup();
+        loaded = true;
+      }
+    })();
+    return loadPromise;
+  }
+
+  // Para reintentar manualmente si la primera carga falló.
+  function retry() {
+    loadPromise = null;
+    return ensureLoaded();
+  }
+
+  function isLoaded() {
+    return loaded;
+  }
+  function getError() {
+    return lastError;
+  }
 
   function forLocal(brandId, localName) {
     const key = localKey(brandId, localName);
     return exams
       .filter((e) => e.localKey === key)
-      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || b.createdAt.localeCompare(a.createdAt));
+      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || String(b.createdAt).localeCompare(String(a.createdAt)));
   }
 
   function forBrand(brandId) {
     return exams.filter((e) => e.brandId === brandId);
-  }
-
-  function add(record) {
-    const entry = Object.assign({}, record, {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      localKey: localKey(record.brandId, record.localName),
-      createdAt: new Date().toISOString(),
-    });
-    exams.push(entry);
-    persist(exams);
-    return entry;
-  }
-
-  function remove(id) {
-    exams = exams.filter((e) => e.id !== id);
-    persist(exams);
   }
 
   function countForLocal(brandId, localName) {
@@ -117,28 +165,44 @@ const ExamStore = (function () {
     };
   }
 
-  // Estadísticas de una marca entera, para las cards de la home.
   function statsForBrand(brandId) {
     return computeStats(forBrand(brandId));
   }
 
-  // Estadísticas de un conjunto de locales (para un regional o una
-  // zonal): junta los exámenes de cada local nombrado y agrega.
   function statsForLocalNames(brandId, localNames) {
     const list = localNames.reduce((acc, name) => acc.concat(forLocal(brandId, name)), []);
     return computeStats(list);
   }
 
-  // Los N exámenes más recientes cargados en cualquier marca/local, para
-  // el panel de actividad reciente de la home.
   function recent(limit) {
     return exams
       .slice()
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
       .slice(0, limit || 8);
   }
 
+  async function add(record) {
+    const entry = Object.assign({}, record, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+    });
+    await post("add", { record: entry });
+    exams.push(withLocalKey(entry));
+    saveBackup(exams);
+    return entry;
+  }
+
+  async function remove(id) {
+    await post("remove", { id });
+    exams = exams.filter((e) => e.id !== id);
+    saveBackup(exams);
+  }
+
   return {
+    ensureLoaded,
+    retry,
+    isLoaded,
+    getError,
     forLocal,
     forBrand,
     add,

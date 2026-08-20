@@ -13,6 +13,8 @@
   const appEl = document.getElementById("app");
   const brandPillEl = document.getElementById("brandPill");
   const navCrumbEl = document.getElementById("navCrumb");
+  const syncPillEl = document.getElementById("syncPill");
+  let syncOkTimeout = null;
 
   const RESULTADOS = {
     aprobado: "Aprobado",
@@ -454,17 +456,27 @@
       formEl.hidden = true;
     });
 
-    formEl.addEventListener("submit", (ev) => {
+    formEl.addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      ExamStore.add(
-        examRecordFromForm(formEl, {
-          brandId: brandSelect.value,
-          regionalId: regionalSelect.value,
-          zonalId: zonalSelect.value,
-          localName: localSelect.value,
-        })
-      );
-      route();
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Guardando…";
+      try {
+        await ExamStore.add(
+          examRecordFromForm(formEl, {
+            brandId: brandSelect.value,
+            regionalId: regionalSelect.value,
+            zonalId: zonalSelect.value,
+            localName: localSelect.value,
+          })
+        );
+        updateSyncPill();
+        route();
+      } catch (err) {
+        updateSyncPill();
+        alert(`No se pudo guardar el examen: ${err.message}. Probá de nuevo en un momento.`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Guardar examen";
+      }
     });
   }
 
@@ -725,20 +737,38 @@
       formEl.hidden = true;
     });
 
-    formEl.addEventListener("submit", (ev) => {
+    formEl.addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      ExamStore.add(
-        examRecordFromForm(formEl, { brandId: brand.id, regionalId: regional.id, zonalId: zonal.id, localName })
-      );
-
-      route();
+      const submitBtn = formEl.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Guardando…";
+      try {
+        await ExamStore.add(
+          examRecordFromForm(formEl, { brandId: brand.id, regionalId: regional.id, zonalId: zonal.id, localName })
+        );
+        updateSyncPill();
+        route();
+      } catch (err) {
+        updateSyncPill();
+        alert(`No se pudo guardar el examen: ${err.message}. Probá de nuevo en un momento.`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Guardar examen";
+      }
     });
 
     appEl.querySelectorAll(".row-delete").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         if (confirm("¿Eliminar este examen?")) {
-          ExamStore.remove(btn.dataset.id);
-          route();
+          btn.disabled = true;
+          try {
+            await ExamStore.remove(btn.dataset.id);
+            updateSyncPill();
+            route();
+          } catch (err) {
+            updateSyncPill();
+            alert(`No se pudo eliminar: ${err.message}. Probá de nuevo en un momento.`);
+            btn.disabled = false;
+          }
         }
       });
     });
@@ -976,7 +1006,40 @@
     appEl.classList.add("fade-in");
   }
 
+  // Pill de estado de sincronización con la planilla (arriba a la derecha).
+  // "Sincronizado" se muestra un ratito y se esconde solo; el aviso de
+  // "sin conexión" queda fijo hasta que se pueda reconectar.
+  function updateSyncPill() {
+    clearTimeout(syncOkTimeout);
+    const err = ExamStore.getError();
+    syncPillEl.hidden = false;
+    if (err) {
+      syncPillEl.className = "sync-pill sync-pill-error";
+      syncPillEl.innerHTML = `${icon("cloudOff", { size: 13 })} Sin conexión — mostrando datos guardados. <u>Reintentar</u>`;
+      syncPillEl.onclick = async () => {
+        syncPillEl.innerHTML = `${icon("cloud", { size: 13 })} Reintentando…`;
+        await ExamStore.retry();
+        updateSyncPill();
+        route();
+      };
+    } else {
+      syncPillEl.onclick = null;
+      syncPillEl.className = "sync-pill sync-pill-ok";
+      syncPillEl.innerHTML = `${icon("cloud", { size: 13 })} Sincronizado`;
+      syncOkTimeout = setTimeout(() => {
+        syncPillEl.hidden = true;
+      }, 3000);
+    }
+  }
+
   window.addEventListener("hashchange", route);
 
-  document.addEventListener("DOMContentLoaded", route);
+  async function boot() {
+    appEl.innerHTML = `<div class="empty-state">${icon("cloud", { size: 18 })} Sincronizando datos…</div>`;
+    await ExamStore.ensureLoaded();
+    updateSyncPill();
+    route();
+  }
+
+  document.addEventListener("DOMContentLoaded", boot);
 })();
