@@ -1,10 +1,9 @@
 // data.js
 // Fuente de datos del Campus de Ascensos.
 //
-// Por ahora esto es data local "demo" para poder trabajar la UI sin
-// depender todavía de Supabase. Cuando conectemos Supabase de verdad,
-// esta misma forma de objeto (ASCENSOS_DATA.brands[]) es la que hay que
-// devolver desde las consultas, para no tener que tocar app.js.
+// Todo es local y estático: no hay conexión a ningún backend. Para agregar
+// o modificar marcas, gerentes, zonas o locales, se edita directamente
+// este archivo.
 
 const ASCENSOS_DATA = {
   brands: [

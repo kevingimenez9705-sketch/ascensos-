@@ -5,7 +5,6 @@
 
 (function () {
   const appEl = document.getElementById("app");
-  const syncPillEl = document.getElementById("syncPill");
   const brandPillEl = document.getElementById("brandPill");
   const navCrumbEl = document.getElementById("navCrumb");
 
@@ -163,17 +162,5 @@
 
   window.addEventListener("hashchange", route);
 
-  // Placeholder de sincronización con Supabase: por ahora los datos son
-  // locales (data.js), así que simulamos el estado "sincronizado" apenas
-  // arranca. Cuando conectemos Supabase de verdad, este es el lugar para
-  // hacer el fetch real antes de renderizar.
-  function init() {
-    route();
-    setTimeout(() => {
-      syncPillEl.classList.add("is-synced");
-      syncPillEl.innerHTML = `<span class="sync-pill-icon">✓</span> Sincronizado`;
-    }, 500);
-  }
-
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", route);
 })();
