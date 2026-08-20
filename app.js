@@ -53,6 +53,31 @@
     return lines.join("");
   }
 
+  // Nodo principal + su par opcional (asistente / responsable), unidos por
+  // una línea horizontal. Se usa tanto para GTE Comercial + su par como
+  // para GTE Regional + su Asistente de Operaciones.
+  function renderPairRow(main, partner, brandColor) {
+    const partnerHtml = partner
+      ? `
+        <div class="org-connector org-connector-h"></div>
+        <div class="org-card org-card-top org-card-secondary" style="--brand-color:${brandColor}">
+          <p class="role-tag">${escapeHtml(partner.role)}</p>
+          <p class="person-name">${escapeHtml(partner.name)}</p>
+          ${contactLines(partner)}
+        </div>`
+      : "";
+
+    return `
+      <div class="org-pair-row">
+        <div class="org-card org-card-top" style="--brand-color:${brandColor}">
+          <p class="role-tag">${escapeHtml(main.role)}</p>
+          <p class="person-name">${escapeHtml(main.name)}</p>
+          ${contactLines(main)}
+        </div>
+        ${partnerHtml}
+      </div>`;
+  }
+
   // ---------- Home: listado de marcas ----------
   function renderHome() {
     navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
@@ -142,11 +167,7 @@
       ${org.pending ? `<div class="org-pending-banner">⚠️ Organigrama de ejemplo — pendiente de cargar los datos reales de ${escapeHtml(brand.name)}.</div>` : ""}
 
       <div class="org-tree">
-        <div class="org-card org-card-top" style="--brand-color:${brand.color}">
-          <p class="role-tag">${escapeHtml(org.comercial.role)}</p>
-          <p class="person-name">${escapeHtml(org.comercial.name)}</p>
-          ${contactLines(org.comercial)}
-        </div>
+        ${renderPairRow(org.comercial, org.comercial.asistente, brand.color)}
         <div class="org-connector"></div>
         <div class="org-children-grid">${regionalCards}</div>
       </div>
@@ -192,16 +213,6 @@
       })
       .join("");
 
-    const asistenteHtml = regional.asistente
-      ? `
-        <div class="org-connector org-connector-h"></div>
-        <div class="org-card org-card-top org-card-secondary" style="--brand-color:${brand.color}">
-          <p class="role-tag">${escapeHtml(regional.asistente.role)}</p>
-          <p class="person-name">${escapeHtml(regional.asistente.name)}</p>
-          ${contactLines(regional.asistente)}
-        </div>`
-      : "";
-
     appEl.innerHTML = `
       <button class="back-link" id="backLink">← Volver a ${escapeHtml(brand.name)}</button>
 
@@ -216,14 +227,7 @@
       </div>
 
       <div class="org-tree">
-        <div class="org-pair-row">
-          <div class="org-card org-card-top" style="--brand-color:${brand.color}">
-            <p class="role-tag">${escapeHtml(regional.role)}</p>
-            <p class="person-name">${escapeHtml(regional.name)}</p>
-            ${contactLines(regional)}
-          </div>
-          ${asistenteHtml}
-        </div>
+        ${renderPairRow(regional, regional.asistente, brand.color)}
         <div class="org-connector"></div>
         <div class="org-children-grid org-children-grid-zonales">${zonalCards}</div>
       </div>

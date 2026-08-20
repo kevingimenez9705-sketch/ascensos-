@@ -9,8 +9,11 @@
 // organigrama oficial en PDF):
 //
 //   organigrama.comercial            -> GTE Comercial (uno solo, tope de la marca)
-//   organigrama.regionales[]         -> GTE Regional (cada uno con su Asistente de Operaciones)
-//     .asistente                     -> Asistente de Operaciones del regional
+//     .asistente                     -> opcional: par del comercial (ej. Responsable
+//                                        Performance Delivery). null/omitido si no tiene.
+//   organigrama.regionales[]         -> GTE Regional
+//     .asistente                     -> opcional: Asistente de Operaciones del regional.
+//                                        null si ese regional no tiene asistente propio.
 //     .zonales[]                     -> GTE Zonal (reporta al regional)
 //       .locales[]                   -> nombres de los locales a cargo de ese zonal
 
@@ -23,39 +26,159 @@ const ASCENSOS_DATA = {
       color: "#e02424",
       logoBg: "#fde2e1",
       logoText: "#e02424",
-      manager: { name: "Evangelina Rodriguez", role: "GTE Comercial" },
+      manager: {
+        name: "Evangelina Rodriguez",
+        role: "GTE Comercial",
+        phone: "11 3611 8446",
+        email: "evangelina.rodriguez@extremas.com.ar",
+      },
       stats: { exams: 0, approved: 0, attendance: null },
-      // TODO: pendiente de reemplazar por el organigrama real de Hamburguesas
-      // Extremas (falta que nos pasen el PDF, igual que se hizo con Sabores
-      // Express). Mientras tanto queda esta estructura de ejemplo con la
-      // misma forma, para no romper la navegación.
+      // Organigrama Hamburguesas Extremas (fuente: PDF provisto por el usuario).
       organigrama: {
-        pending: true,
-        comercial: { name: "Evangelina Rodriguez", role: "GTE Comercial" },
+        comercial: {
+          name: "Evangelina Rodriguez",
+          role: "GTE Comercial",
+          phone: "11 3611 8446",
+          email: "evangelina.rodriguez@extremas.com.ar",
+          asistente: {
+            name: "Yohanna Masucci",
+            role: "Responsable Performance Delivery",
+            phone: "11 2630 3924",
+            email: "yohanna.masucci@extremas.com.ar",
+          },
+        },
         regionales: [
           {
-            id: "regional-pendiente-1",
-            name: "(pendiente)",
+            id: "facundo-aramburo",
+            name: "Facundo Aramburo",
             role: "GTE Regional",
-            phone: null,
-            email: null,
+            phone: "11 2808 0455",
+            email: "facundo.aramburo@extremas.com.ar",
             asistente: null,
             zonales: [
               {
-                id: "zonal-pendiente-1",
-                name: "Juan Pérez",
+                id: "adriana-ibarra",
+                name: "Adriana Ibarra",
                 role: "GTE Zonal",
-                phone: null,
-                email: null,
-                locales: ["Sucursal Palermo", "Sucursal Belgrano"],
+                phone: "11 2682 4698",
+                email: "adriana.ibarra@extremas.com.ar",
+                locales: ["Avellaneda", "Wilde", "Pompeya", "Rosario", "Quilmes"],
               },
               {
-                id: "zonal-pendiente-2",
-                name: "María López",
+                id: "yamila-lugo",
+                name: "Yamila Lugo",
                 role: "GTE Zonal",
-                phone: null,
-                email: null,
-                locales: ["Sucursal Caballito", "Sucursal Flores"],
+                phone: "11 3927 9756",
+                email: "yamila.lugo@extremas.com.ar",
+                locales: ["Monte Grande", "Lomas de Zamora", "Banfield", "La Plata", "Berazategui"],
+              },
+              {
+                id: "marianela-mazzeo",
+                name: "Marianela Mazzeo",
+                role: "GTE Zonal",
+                phone: "11 5422 5628",
+                email: "marianela.mazzeo@extremas.com.ar",
+                locales: ["Solano", "Varela", "Glew", "Temperley", "Lanus", "Adrogué"],
+              },
+              {
+                id: "mayra-agmatt",
+                name: "Mayra Agmatt",
+                role: "GTE Zonal",
+                phone: "11 3301 9204",
+                email: "mayra.agmatt@extremas.com.ar",
+                locales: ["Florida", "Tucuman", "Once", "Callao", "Pueyrredon", "Pellegrini"],
+              },
+            ],
+          },
+          {
+            id: "federico-gomez",
+            name: "Federico Gomez",
+            role: "GTE Regional",
+            phone: "11 2159 8392",
+            email: "federico.gomez@extremas.com.ar",
+            asistente: null,
+            zonales: [
+              {
+                id: "mariano-artigue",
+                name: "Mariano Artigue",
+                role: "GTE Zonal",
+                phone: "11 5006 2830",
+                email: "mariano.artigue@extremas.com.ar",
+                locales: ["Castelar", "Merlo", "Ramos", "Moreno", "El Palomar"],
+              },
+              {
+                id: "fernando-buosi",
+                name: "Fernando Buosi",
+                role: "GTE Zonal",
+                phone: "11 2792 6162",
+                email: "fernando.buosi@extremas.com.ar",
+                locales: ["Rodriguez", "Lujan", "Zarate", "Garin"],
+              },
+              {
+                id: "facundo-gimenez",
+                name: "Facundo Gimenez",
+                role: "GTE Zonal",
+                phone: "11 3868 6567",
+                email: "facundo.gimenez@extremas.com.ar",
+                locales: ["Laferrere", "Moron", "Crovara", "San Justo"],
+              },
+              {
+                id: "juan-pereyra",
+                name: "Juan Pereyra",
+                role: "GTE Zonal",
+                phone: "11 7618 2436",
+                email: "juan.pereyra@extremas.com.ar",
+                locales: ["Polvorines", "Tortuguitas", "Pilar", "Alberti"],
+              },
+              {
+                id: "jaquelina-polo",
+                name: "Jaquelina Polo",
+                role: "GTE Zonal",
+                phone: "11 3157 3072",
+                email: "jaquelina.polo@extremas.com.ar",
+                locales: ["Jose C. Paz", "San Miguel", "Grand Bourg", "Talar"],
+              },
+            ],
+          },
+          {
+            id: "gustavo-gomez",
+            name: "Gustavo Gomez",
+            role: "GTE Regional",
+            phone: "11 2792 0774",
+            email: "gustavo.gomez@extremas.com.ar",
+            asistente: null,
+            zonales: [
+              {
+                id: "monica-batista",
+                name: "Monica Batista",
+                role: "GTE Zonal",
+                phone: "11 3302 1967",
+                email: "monica.batista@extremas.com.ar",
+                locales: ["Caballito", "Liniers", "Flores", "Flores 2", "Mataderos"],
+              },
+              {
+                id: "salome-rodriguez",
+                name: "Salome Rodriguez",
+                role: "GTE Zonal",
+                phone: "11 3361 2557",
+                email: "salome.rodriguez@extremas.com.ar",
+                locales: ["Loma Hermosa", "Hurlingham", "Caseros", "Munro", "José L. Suarez"],
+              },
+              {
+                id: "roxana-gorosito",
+                name: "Roxana Gorosito",
+                role: "GTE Zonal",
+                phone: "11 2792 8390",
+                email: "roxana.gorosito@extremas.com.ar",
+                locales: ["Olivos", "San Isidro", "Boulogne", "Villa Adelina", "Villa Ballester"],
+              },
+              {
+                id: "lautaro-tesi",
+                name: "Lautaro Tesi",
+                role: "GTE Zonal",
+                phone: "11 2630 2878",
+                email: "lautaro.tesi@extremas.com.ar",
+                locales: ["San Fernando", "Virreyes", "Pacheco", "Vicente Lopez"],
               },
             ],
           },
