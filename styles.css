@@ -421,6 +421,196 @@ main#app {
   color: var(--brand-color, #999);
 }
 
+.local-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.local-link:hover { color: var(--brand-color, #333); text-decoration: underline; }
+
+.local-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brand-color, #333);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* ---------- Botones ---------- */
+.btn-primary {
+  background: var(--brand-color, #333);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-ghost:hover { color: var(--ink); }
+
+/* ---------- Vista de local: stats + formulario + tabla ---------- */
+.local-stats-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.local-stat {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+.local-stat b { color: var(--ink); font-size: 15px; }
+
+.exam-form {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 24px;
+}
+
+.exam-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.exam-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.exam-form-full { grid-column: 1 / -1; }
+
+.exam-form input,
+.exam-form select,
+.exam-form textarea {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #fff;
+}
+.exam-form input:focus,
+.exam-form select:focus,
+.exam-form textarea:focus {
+  outline: 2px solid var(--brand-color, #999);
+  outline-offset: 1px;
+}
+.exam-form textarea { resize: vertical; }
+
+.exam-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.exam-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 780px;
+}
+
+.exam-table th,
+.exam-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--card-border);
+  white-space: nowrap;
+}
+.exam-table .col-obs { white-space: normal; min-width: 160px; }
+
+.exam-table th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: #fafbfe;
+}
+
+.exam-table tbody tr:last-child td { border-bottom: none; }
+.exam-table tbody tr:hover { background: #fafbfe; }
+
+.resultado-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.resultado-aprobado { background: #e3f7e8; color: #1a7f3c; }
+.resultado-desaprobado { background: #fde3e3; color: #b3261e; }
+.resultado-pendiente { background: #fff2d9; color: #8a5a00; }
+.resultado-no-asistio { background: #eceef3; color: var(--ink-soft); }
+
+.row-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+}
+.row-delete:hover { opacity: 1; }
+
+.empty-table {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 28px 16px;
+  white-space: normal;
+}
+
 /* ---------- Empty / loading ---------- */
 .empty-state {
   text-align: center;

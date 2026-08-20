@@ -1,13 +1,21 @@
 // app.js
 // Router simple por hash:
-//   #/                                  -> listado de marcas
-//   #/organigrama/:brandId              -> GTE Comercial + listado de Gerentes Regionales
-//   #/organigrama/:brandId/:regionalId  -> Gerente Regional + su Asistente + Gerentes Zonales y locales
+//   #/                                            -> listado de marcas
+//   #/organigrama/:brandId                        -> GTE Comercial + listado de Gerentes Regionales
+//   #/organigrama/:brandId/:regionalId             -> Gerente Regional + su Asistente + Gerentes Zonales y locales
+//   #/organigrama/:brandId/:regionalId/:zonalId/:localSlug -> exámenes de ascenso cargados en ese local
 
 (function () {
   const appEl = document.getElementById("app");
   const brandPillEl = document.getElementById("brandPill");
   const navCrumbEl = document.getElementById("navCrumb");
+
+  const RESULTADOS = {
+    aprobado: "Aprobado",
+    desaprobado: "Desaprobado",
+    pendiente: "Pendiente de revisión",
+    "no-asistio": "No asistió",
+  };
 
   function getBrand(id) {
     return ASCENSOS_DATA.brands.find((b) => b.id === id);
@@ -15,6 +23,16 @@
 
   function getRegional(brand, regionalId) {
     return brand.organigrama.regionales.find((r) => r.id === regionalId);
+  }
+
+  function getZonal(regional, zonalId) {
+    return regional.zonales.find((z) => z.id === zonalId);
+  }
+
+  // El local no tiene id propio en data.js (es solo un nombre dentro de
+  // zonal.locales[]): lo identificamos por el slug de su nombre.
+  function getLocalName(zonal, localSlug) {
+    return zonal.locales.find((name) => slugify(name) === localSlug) || null;
   }
 
   function formatAttendance(value) {
@@ -85,7 +103,7 @@
 
     const cards = ASCENSOS_DATA.brands
       .map((brand) => {
-        const s = brand.stats;
+        const s = ExamStore.statsForBrand(brand.id);
         return `
           <div class="brand-card" style="--brand-color:${brand.color}">
             <div class="brand-card-top">
@@ -201,7 +219,11 @@
     const zonalCards = regional.zonales
       .map((zonal) => {
         const locales = zonal.locales
-          .map((local) => `<li>${escapeHtml(local)}</li>`)
+          .map((local) => {
+            const count = ExamStore.countForLocal(brand.id, regional.id, zonal.id, local);
+            const badge = count > 0 ? `<span class="local-badge">${count}</span>` : "";
+            return `<li><button class="local-link" data-zonal="${zonal.id}" data-local="${slugify(local)}">${escapeHtml(local)}${badge}</button></li>`;
+          })
           .join("");
         return `
           <div class="org-card org-zonal-card" style="--brand-color:${brand.color}">
@@ -236,15 +258,212 @@
     document.getElementById("backLink").addEventListener("click", () => {
       window.location.hash = `#/organigrama/${brand.id}`;
     });
+    appEl.querySelectorAll(".local-link").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        window.location.hash = `#/organigrama/${brand.id}/${regional.id}/${btn.dataset.zonal}/${btn.dataset.local}`;
+      });
+    });
+  }
+
+  // ---------- Nivel 3: exámenes de ascenso cargados en un local ----------
+  function renderLocal(brandId, regionalId, zonalId, localSlug) {
+    const brand = getBrand(brandId);
+    const regional = brand ? getRegional(brand, regionalId) : null;
+    const zonal = regional ? getZonal(regional, zonalId) : null;
+    const localName = zonal ? getLocalName(zonal, localSlug) : null;
+
+    if (!brand || !regional || !zonal || !localName) {
+      navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
+      appEl.innerHTML = `<div class="empty-state">No encontramos ese local.<br><a href="#/">Volver</a></div>`;
+      return;
+    }
+
+    navCrumbEl.innerHTML = `<b>Campus</b> &gt; ${crumbLink("#/", "Ascensos")} &gt; ${crumbLink(`#/organigrama/${brand.id}`, brand.name)} &gt; ${crumbLink(`#/organigrama/${brand.id}/${regional.id}`, regional.name)} &gt; ${escapeHtml(localName)}`;
+    brandPillEl.innerHTML = `${renderBrandLogo(brand)} ${escapeHtml(brand.name)}`;
+    brandPillEl.style.setProperty("--brand-color", brand.color);
+
+    const exams = ExamStore.forLocal(brand.id, regional.id, zonal.id, localName);
+    const total = exams.length;
+    const aprobados = exams.filter((e) => e.resultado === "aprobado").length;
+    const asistieron = exams.filter((e) => e.asistio).length;
+    const asistenciaPct = total ? `${Math.round((asistieron / total) * 100)}%` : "S/D";
+
+    const rows = exams
+      .map((e) => {
+        const puesto = [e.puestoActual, e.puestoPostula].filter(Boolean).join(" → ");
+        return `
+          <tr>
+            <td>${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</td>
+            <td>${puesto ? escapeHtml(puesto) : "—"}</td>
+            <td>${e.fecha ? escapeHtml(e.fecha) : "—"}</td>
+            <td>${e.asistio ? "Sí" : "No"}</td>
+            <td>${e.puntaje === null || e.puntaje === undefined ? "—" : escapeHtml(e.puntaje)}</td>
+            <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
+            <td class="col-obs">${e.observaciones ? escapeHtml(e.observaciones) : "—"}</td>
+            <td><button class="row-delete" data-id="${e.id}" title="Eliminar examen">🗑</button></td>
+          </tr>`;
+      })
+      .join("");
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    appEl.innerHTML = `
+      <button class="back-link" id="backLink">← Volver a ${escapeHtml(regional.name)}</button>
+
+      <div class="org-header">
+        <div class="org-brand-title">
+          ${renderBrandLogo(brand)}
+          <div>
+            <h2>${escapeHtml(localName)}</h2>
+            <p>${escapeHtml(zonal.name)} (GTE Zonal) · ${escapeHtml(regional.name)} · ${escapeHtml(brand.name)}</p>
+          </div>
+        </div>
+        <button class="btn-primary" id="toggleFormBtn" style="--brand-color:${brand.color}">+ Cargar examen</button>
+      </div>
+
+      <div class="local-stats-row">
+        <div class="local-stat"><b>${total}</b> exámenes</div>
+        <div class="local-stat"><b>${aprobados}</b> aprobados</div>
+        <div class="local-stat"><b>${asistenciaPct}</b> asistencia</div>
+      </div>
+
+      <form id="examForm" class="exam-form" hidden>
+        <div class="exam-form-grid">
+          <label>Nombre
+            <input type="text" name="nombre" required>
+          </label>
+          <label>Apellido
+            <input type="text" name="apellido" required>
+          </label>
+          <label>Puesto actual
+            <input type="text" name="puestoActual" placeholder="Ej: Cajero/a">
+          </label>
+          <label>Puesto al que postula
+            <input type="text" name="puestoPostula" placeholder="Ej: Encargado/a de turno">
+          </label>
+          <label>Fecha del examen
+            <input type="date" name="fecha" value="${today}" required>
+          </label>
+          <label>¿Asistió?
+            <select name="asistio" id="asistioSelect">
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+          <label id="puntajeField">Puntaje (0-100)
+            <input type="number" name="puntaje" min="0" max="100" step="1">
+          </label>
+          <label id="resultadoField">Resultado
+            <select name="resultado">
+              <option value="pendiente">Pendiente de revisión</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="desaprobado">Desaprobado</option>
+            </select>
+          </label>
+          <label class="exam-form-full">Observaciones
+            <textarea name="observaciones" rows="2" placeholder="Opcional"></textarea>
+          </label>
+        </div>
+        <div class="exam-form-actions">
+          <button type="button" class="btn-ghost" id="cancelFormBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" style="--brand-color:${brand.color}">Guardar examen</button>
+        </div>
+      </form>
+
+      <div class="table-scroll">
+        <table class="exam-table">
+          <thead>
+            <tr>
+              <th>Nombre y apellido</th>
+              <th>Puesto</th>
+              <th>Fecha</th>
+              <th>Asistió</th>
+              <th>Puntaje</th>
+              <th>Resultado</th>
+              <th>Observaciones</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || `<tr><td colspan="8" class="empty-table">Todavía no hay exámenes cargados en este local.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("backLink").addEventListener("click", () => {
+      window.location.hash = `#/organigrama/${brand.id}/${regional.id}`;
+    });
+
+    const formEl = document.getElementById("examForm");
+    const toggleBtn = document.getElementById("toggleFormBtn");
+    const cancelBtn = document.getElementById("cancelFormBtn");
+    const asistioSelect = document.getElementById("asistioSelect");
+    const puntajeField = document.getElementById("puntajeField");
+    const resultadoField = document.getElementById("resultadoField");
+
+    function syncAsistioFields() {
+      const asistio = asistioSelect.value === "si";
+      puntajeField.style.display = asistio ? "" : "none";
+      resultadoField.style.display = asistio ? "" : "none";
+    }
+    asistioSelect.addEventListener("change", syncAsistioFields);
+    syncAsistioFields();
+
+    toggleBtn.addEventListener("click", () => {
+      formEl.hidden = !formEl.hidden;
+      if (!formEl.hidden) formEl.querySelector('[name="nombre"]').focus();
+    });
+    cancelBtn.addEventListener("click", () => {
+      formEl.reset();
+      formEl.hidden = true;
+    });
+
+    formEl.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const data = new FormData(formEl);
+      const asistio = data.get("asistio") === "si";
+      const puntajeRaw = data.get("puntaje");
+
+      ExamStore.add({
+        brandId: brand.id,
+        regionalId: regional.id,
+        zonalId: zonal.id,
+        localName: localName,
+        nombre: String(data.get("nombre") || "").trim(),
+        apellido: String(data.get("apellido") || "").trim(),
+        puestoActual: String(data.get("puestoActual") || "").trim(),
+        puestoPostula: String(data.get("puestoPostula") || "").trim(),
+        fecha: data.get("fecha"),
+        asistio,
+        puntaje: asistio && puntajeRaw !== "" ? Number(puntajeRaw) : null,
+        resultado: asistio ? data.get("resultado") : "no-asistio",
+        observaciones: String(data.get("observaciones") || "").trim(),
+      });
+
+      route();
+    });
+
+    appEl.querySelectorAll(".row-delete").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (confirm("¿Eliminar este examen?")) {
+          ExamStore.remove(btn.dataset.id);
+          route();
+        }
+      });
+    });
   }
 
   // ---------- Router ----------
   function route() {
     const hash = window.location.hash || "#/";
+    const localMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)$/);
     const regionalMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)$/);
     const brandMatch = hash.match(/^#\/organigrama\/([^/]+)$/);
 
-    if (regionalMatch) {
+    if (localMatch) {
+      renderLocal(localMatch[1], localMatch[2], localMatch[3], localMatch[4]);
+    } else if (regionalMatch) {
       renderRegional(regionalMatch[1], regionalMatch[2]);
     } else if (brandMatch) {
       renderOrganigrama(brandMatch[1]);

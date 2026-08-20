@@ -32,7 +32,6 @@ const ASCENSOS_DATA = {
         phone: "11 3611 8446",
         email: "evangelina.rodriguez@extremas.com.ar",
       },
-      stats: { exams: 0, approved: 0, attendance: null },
       // Organigrama Hamburguesas Extremas (fuente: PDF provisto por el usuario).
       organigrama: {
         comercial: {
@@ -198,7 +197,6 @@ const ASCENSOS_DATA = {
         phone: "11 2257 5088",
         email: "mauro.dallavalle@saboresexpress.com.ar",
       },
-      stats: { exams: 0, approved: 0, attendance: null },
       // Organigrama Sabores Express 2026 (fuente: PDF provisto por el usuario).
       organigrama: {
         comercial: {
