@@ -42,10 +42,6 @@
     return zonal.locales.find((name) => slugify(name) === localSlug) || null;
   }
 
-  function formatAttendance(value) {
-    return value === null || value === undefined ? "S/D" : value;
-  }
-
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (c) => (
       { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -126,8 +122,9 @@
   }
 
   // Tarjeta de persona: avatar a la izquierda, info a la derecha.
-  // opts.extra: HTML libre agregado debajo de la fila (ej: lista de locales).
-  // opts.meta: línea de resumen con separador arriba (ej: "5 zonales · 27 locales").
+  // opts.meta: línea (o array de líneas) de resumen, con separador arriba
+  //   (ej: "5 zonales · 27 locales", o esa + una línea de stats de exámenes).
+  // opts.extra: HTML libre agregado debajo del meta (ej: lista de locales).
   // opts.tag: 'div' (default) o 'button', para tarjetas clickeables.
   // opts.attrs: atributos HTML extra en la etiqueta raíz (ej: data-regional="...").
   function personCard(person, brandId, opts) {
@@ -136,6 +133,10 @@
     const extraClass = opts.extraClass || "";
     const size = opts.size || 44;
     const attrs = opts.attrs || "";
+    const metaLines = opts.meta ? (Array.isArray(opts.meta) ? opts.meta : [opts.meta]) : [];
+    const metaHtml = metaLines
+      .map((line, i) => `<p class="org-card-meta${i > 0 ? " org-card-meta-sub" : ""}">${line}</p>`)
+      .join("");
     return `
       <${tag} class="org-card ${extraClass}" style="--brand-color:${opts.brandColor}" ${attrs}>
         <div class="org-card-row">
@@ -146,9 +147,92 @@
             ${contactLines(person)}
           </div>
         </div>
+        ${metaHtml}
         ${opts.extra || ""}
-        ${opts.meta ? `<p class="org-card-meta">${opts.meta}</p>` : ""}
       </${tag}>`;
+  }
+
+  // ---------- Estadísticas de exámenes: formato reutilizable ----------
+  function pctLabel(value) {
+    return value === null || value === undefined ? "S/D" : `${value}%`;
+  }
+  function scoreLabel(value) {
+    return value === null || value === undefined ? "S/D" : value;
+  }
+
+  // Fila de "pills" grandes: exámenes, aprobados, promedio, asistencia,
+  // % aprobados. Se usa en la vista de un local y en el resumen de un regional.
+  function statsRowHtml(stats) {
+    return `
+      <div class="stats-row">
+        <div class="stat-pill"><b>${stats.exams}</b> exámenes</div>
+        <div class="stat-pill"><b>${stats.approved}</b> aprobados</div>
+        <div class="stat-pill">Prom. <b>${scoreLabel(stats.avgScore)}</b></div>
+        <div class="stat-pill"><b>${pctLabel(stats.attendancePct)}</b> asistencia</div>
+        <div class="stat-pill"><b>${pctLabel(stats.approvalPct)}</b> aprobados</div>
+      </div>`;
+  }
+
+  // Línea compacta de una sola oración, para el meta de una tarjeta
+  // (regional o zonal) dentro del organigrama.
+  function statsMetaLine(stats) {
+    if (!stats.exams) return "Sin exámenes cargados";
+    return `${stats.exams} exámenes · ${pctLabel(stats.approvalPct)} aprobados · Prom. ${scoreLabel(stats.avgScore)}`;
+  }
+
+  // Dos líneas cortas para la card de una marca en la home.
+  function statsBrandLinesHtml(stats) {
+    if (!stats.exams) {
+      return `<div class="brand-stats">Todavía no se cargaron exámenes en esta marca.</div>`;
+    }
+    return `
+      <div class="brand-stats"><b>${stats.exams}</b> exámenes · <b>${stats.approved}</b> aprobados · Prom. <b>${scoreLabel(stats.avgScore)}</b></div>
+      <div class="brand-stats"><b>${pctLabel(stats.attendancePct)}</b> asistencia · <b>${pctLabel(stats.approvalPct)}</b> aprobados</div>`;
+  }
+
+  // Todos los nombres de local que cuelgan de un regional (organigrama efectivo).
+  function localNamesForRegional(regional) {
+    return regional.zonales.reduce((acc, z) => acc.concat(z.locales), []);
+  }
+
+  // Busca en qué regional/zonal está HOY un local (organigrama efectivo),
+  // para poder armar el link correcto aunque se haya movido de lugar.
+  function findLocalLocation(org, localName) {
+    for (const r of org.regionales) {
+      for (const z of r.zonales) {
+        if (z.locales.includes(localName)) return { regionalId: r.id, zonalId: z.id };
+      }
+    }
+    return null;
+  }
+
+  // Panel de "últimos exámenes cargados" (todas las marcas), para la home.
+  function recentExamsHtml() {
+    const items = ExamStore.recent(8);
+    if (!items.length) {
+      return `<div class="empty-state">Todavía no se cargó ningún examen.</div>`;
+    }
+    return items
+      .map((e) => {
+        const brand = getBrand(e.brandId);
+        if (!brand) return "";
+        const org = OrgOverrides.effectiveOrg(brand);
+        const loc = findLocalLocation(org, e.localName);
+        const href = loc
+          ? `#/organigrama/${brand.id}/${loc.regionalId}/${loc.zonalId}/${slugify(e.localName)}`
+          : `#/organigrama/${brand.id}`;
+        const when = e.fecha || e.createdAt.slice(0, 10);
+        return `
+          <a class="recent-exam" href="${href}" style="--brand-color:${brand.color}">
+            ${avatar({ name: `${e.nombre} ${e.apellido}` }, brand.id, 34)}
+            <span class="recent-exam-body">
+              <span class="recent-exam-name">${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</span>
+              <span class="recent-exam-meta">${escapeHtml(e.localName)} · ${escapeHtml(brand.name)} · ${escapeHtml(when)}</span>
+            </span>
+            <span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span>
+          </a>`;
+      })
+      .join("");
   }
 
   // Nodo principal + su par opcional (asistente / responsable), unidos por
@@ -214,9 +298,7 @@
                 <p class="brand-manager">${escapeHtml(brand.manager.name)} · ${escapeHtml(brand.manager.role)}</p>
               </div>
             </div>
-            <div class="brand-stats">
-              <b>${s.exams}</b> exámenes <b>${s.approved}</b> aprobados <b>${formatAttendance(s.attendance)}</b> asist.
-            </div>
+            ${statsBrandLinesHtml(s)}
             <button class="brand-link" data-brand="${brand.id}">Ver organigrama ${icon("arrowRight", { size: 14 })}</button>
           </div>`;
       })
@@ -239,6 +321,9 @@
 
       <p class="section-label">MARCAS</p>
       <div class="brand-grid">${cards}</div>
+
+      <p class="section-label section-label-spaced">${icon("bell", { size: 13 })} ÚLTIMOS EXÁMENES CARGADOS</p>
+      <div class="recent-exams-panel">${recentExamsHtml()}</div>
     `;
 
     appEl.querySelectorAll("[data-brand]").forEach((btn) => {
@@ -272,11 +357,12 @@
       .map((regional) => {
         const zonalesCount = regional.zonales.length;
         const localesCount = regional.zonales.reduce((n, z) => n + z.locales.length, 0);
+        const stats = ExamStore.statsForLocalNames(brand.id, localNamesForRegional(regional));
         return personCard(regional, brand.id, {
           tag: "button",
           extraClass: "org-card-link",
           brandColor: brand.color,
-          meta: `${zonalesCount} zonales · ${localesCount} locales`,
+          meta: [`${zonalesCount} zonales · ${localesCount} locales`, statsMetaLine(stats)],
           attrs: `data-regional="${regional.id}"`,
         });
       })
@@ -348,14 +434,18 @@
             return `<li><button class="local-link" data-zonal="${zonal.id}" data-local="${slugify(local)}">${icon("building", { size: 13 })} ${escapeHtml(local)}${badge}</button></li>`;
           })
           .join("");
+        const zonalStats = ExamStore.statsForLocalNames(brand.id, zonal.locales);
         return personCard(zonal, brand.id, {
           extraClass: "org-zonal-card",
           brandColor: brand.color,
           size: 38,
+          meta: statsMetaLine(zonalStats),
           extra: `<ul class="org-locales-inline">${locales}</ul>`,
         });
       })
       .join("");
+
+    const regionalStats = ExamStore.statsForLocalNames(brand.id, localNamesForRegional(regional));
 
     appEl.innerHTML = `
       <button class="back-link" id="backLink">${icon("arrowLeft", { size: 14 })} Volver a ${escapeHtml(brand.name)}</button>
@@ -369,6 +459,8 @@
           </div>
         </div>
       </div>
+
+      ${statsRowHtml(regionalStats)}
 
       <div class="org-tree">
         ${renderPairRow(regional, regional.asistente, brand.id, brand.color)}
@@ -412,10 +504,7 @@
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
     const exams = ExamStore.forLocal(brand.id, localName);
-    const total = exams.length;
-    const aprobados = exams.filter((e) => e.resultado === "aprobado").length;
-    const asistieron = exams.filter((e) => e.asistio).length;
-    const asistenciaPct = total ? `${Math.round((asistieron / total) * 100)}%` : "S/D";
+    const localStats = ExamStore.computeStats(exams);
 
     const rows = exams
       .map((e) => {
@@ -450,11 +539,7 @@
         <button class="btn-primary" id="toggleFormBtn" style="--brand-color:${brand.color}">${icon("plus", { size: 14 })} Cargar examen</button>
       </div>
 
-      <div class="local-stats-row">
-        <div class="local-stat"><b>${total}</b> exámenes</div>
-        <div class="local-stat"><b>${aprobados}</b> aprobados</div>
-        <div class="local-stat"><b>${asistenciaPct}</b> asistencia</div>
-      </div>
+      ${statsRowHtml(localStats)}
 
       <form id="examForm" class="exam-form" hidden>
         <div class="exam-form-grid">

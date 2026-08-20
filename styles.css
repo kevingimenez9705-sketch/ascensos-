@@ -188,7 +188,49 @@ main#app {
   letter-spacing: 0.08em;
   color: var(--ink-soft);
   margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.section-label-spaced { margin-top: 36px; }
+
+/* ---------- Panel de últimos exámenes (home) ---------- */
+.recent-exams-panel {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.recent-exam {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--card-border);
+}
+.recent-exam:last-child { border-bottom: none; }
+.recent-exam:hover { background: #fafbfe; }
+
+.recent-exam-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.recent-exam-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.recent-exam-meta {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-exam .resultado-badge { flex-shrink: 0; }
 
 /* ---------- Brand cards ---------- */
 .brand-grid {
@@ -462,6 +504,13 @@ main#app {
   padding-top: 8px;
   border-top: 1px dashed var(--card-border);
 }
+/* segunda línea de meta (ej. stats de exámenes debajo de zonales/locales):
+   sin repetir el separador, solo un poco de aire */
+.org-card-meta-sub {
+  margin: 4px 0 0;
+  padding-top: 0;
+  border-top: none;
+}
 
 .org-connector {
   width: 2px;
@@ -591,22 +640,25 @@ main#app {
 }
 .btn-ghost:hover { color: var(--ink); }
 
-/* ---------- Vista de local: stats + formulario + tabla ---------- */
-.local-stats-row {
+/* ---------- Fila de stats reutilizable (vista de local y de regional) ---------- */
+.stats-row {
   display: flex;
-  gap: 24px;
+  gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
-.local-stat {
+.stat-pill {
   background: #fff;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 10px 16px;
   font-size: 13.5px;
   color: var(--ink-soft);
+  white-space: nowrap;
 }
-.local-stat b { color: var(--ink); font-size: 15px; }
+.stat-pill b { color: var(--ink); font-size: 15px; }
+
+/* ---------- Vista de local: formulario + tabla ---------- */
 
 .exam-form {
   background: #fff;
