@@ -4,6 +4,13 @@
 // Todo queda en localStorage del navegador: no hay backend ni conexión a
 // ningún servicio. Los datos son propios de cada navegador/dispositivo
 // donde se cargan.
+//
+// La clave de cada examen depende solo de marca + nombre del local (no de
+// en qué zonal/regional está colgado ese local en el organigrama). Así, si
+// después se mueve el local a otra zonal (ver overrides.js), los exámenes
+// ya cargados lo siguen sin perderse. regionalId/zonalId se guardan igual
+// en el registro, pero solo como dato informativo de "dónde estaba" al
+// cargarlo.
 
 const ExamStore = (function () {
   const STORAGE_KEY = "campusAscensos.examenes.v1";
@@ -36,14 +43,31 @@ const ExamStore = (function () {
     }
   }
 
-  let exams = load();
-
-  function localKey(brandId, regionalId, zonalId, localName) {
-    return [brandId, regionalId, zonalId, slugify(localName)].join("/");
+  function localKey(brandId, localName) {
+    return `${brandId}/${slugify(localName)}`;
   }
 
-  function forLocal(brandId, regionalId, zonalId, localName) {
-    const key = localKey(brandId, regionalId, zonalId, localName);
+  let exams = load();
+
+  // Migración: versiones anteriores guardaban la clave como
+  // brandId/regionalId/zonalId/localSlug. Si encontramos registros viejos
+  // (localKey con más de 2 segmentos) los recalculamos a la clave nueva
+  // para no perder los exámenes ya cargados.
+  (function migrateLegacyKeys() {
+    let changed = false;
+    exams = exams.map((e) => {
+      const parts = String(e.localKey || "").split("/");
+      if (parts.length > 2 && e.brandId && e.localName) {
+        changed = true;
+        return Object.assign({}, e, { localKey: localKey(e.brandId, e.localName) });
+      }
+      return e;
+    });
+    if (changed) persist(exams);
+  })();
+
+  function forLocal(brandId, localName) {
+    const key = localKey(brandId, localName);
     return exams
       .filter((e) => e.localKey === key)
       .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || b.createdAt.localeCompare(a.createdAt));
@@ -56,7 +80,7 @@ const ExamStore = (function () {
   function add(record) {
     const entry = Object.assign({}, record, {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      localKey: localKey(record.brandId, record.regionalId, record.zonalId, record.localName),
+      localKey: localKey(record.brandId, record.localName),
       createdAt: new Date().toISOString(),
     });
     exams.push(entry);
@@ -69,8 +93,8 @@ const ExamStore = (function () {
     persist(exams);
   }
 
-  function countForLocal(brandId, regionalId, zonalId, localName) {
-    return forLocal(brandId, regionalId, zonalId, localName).length;
+  function countForLocal(brandId, localName) {
+    return forLocal(brandId, localName).length;
   }
 
   // Estadísticas agregadas de una marca, para las cards de la home.

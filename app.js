@@ -25,8 +25,11 @@
     return ASCENSOS_DATA.brands.find((b) => b.id === id);
   }
 
-  function getRegional(brand, regionalId) {
-    return brand.organigrama.regionales.find((r) => r.id === regionalId);
+  // Nota: "org" acá siempre es el organigrama EFECTIVO (con los
+  // movimientos de OrgOverrides ya aplicados), no brand.organigrama
+  // directo — así una zonal/local movida aparece en su lugar nuevo.
+  function getRegional(org, regionalId) {
+    return org.regionales.find((r) => r.id === regionalId);
   }
 
   function getZonal(regional, zonalId) {
@@ -263,7 +266,7 @@
     brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
-    const org = brand.organigrama;
+    const org = OrgOverrides.effectiveOrg(brand);
 
     const regionalCards = org.regionales
       .map((regional) => {
@@ -290,6 +293,7 @@
             <p>Organigrama de ascensos</p>
           </div>
         </div>
+        <button class="btn-ghost" id="moverBtn">${icon("move", { size: 14 })} Mover zonales / locales</button>
       </div>
 
       ${org.pending ? `<div class="org-pending-banner">${icon("warning", { size: 15 })} Organigrama de ejemplo — pendiente de cargar los datos reales de ${escapeHtml(brand.name)}.</div>` : ""}
@@ -304,6 +308,9 @@
     document.getElementById("backLink").addEventListener("click", () => {
       window.location.hash = "#/";
     });
+    document.getElementById("moverBtn").addEventListener("click", () => {
+      window.location.hash = `#/organigrama/${brand.id}/mover`;
+    });
     appEl.querySelectorAll("[data-regional]").forEach((btn) => {
       btn.addEventListener("click", () => {
         window.location.hash = `#/organigrama/${brand.id}/${btn.dataset.regional}`;
@@ -314,7 +321,8 @@
   // ---------- Nivel 2: Gerente Regional + Asistente + Gerentes Zonales ----------
   function renderRegional(brandId, regionalId) {
     const brand = getBrand(brandId);
-    const regional = brand ? getRegional(brand, regionalId) : null;
+    const org = brand ? OrgOverrides.effectiveOrg(brand) : null;
+    const regional = org ? getRegional(org, regionalId) : null;
 
     if (!brand || !regional) {
       navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }]);
@@ -335,7 +343,7 @@
       .map((zonal) => {
         const locales = zonal.locales
           .map((local) => {
-            const count = ExamStore.countForLocal(brand.id, regional.id, zonal.id, local);
+            const count = ExamStore.countForLocal(brand.id, local);
             const badge = count > 0 ? `<span class="local-badge">${count}</span>` : "";
             return `<li><button class="local-link" data-zonal="${zonal.id}" data-local="${slugify(local)}">${icon("building", { size: 13 })} ${escapeHtml(local)}${badge}</button></li>`;
           })
@@ -382,7 +390,8 @@
   // ---------- Nivel 3: exámenes de ascenso cargados en un local ----------
   function renderLocal(brandId, regionalId, zonalId, localSlug) {
     const brand = getBrand(brandId);
-    const regional = brand ? getRegional(brand, regionalId) : null;
+    const org = brand ? OrgOverrides.effectiveOrg(brand) : null;
+    const regional = org ? getRegional(org, regionalId) : null;
     const zonal = regional ? getZonal(regional, zonalId) : null;
     const localName = zonal ? getLocalName(zonal, localSlug) : null;
 
@@ -402,7 +411,7 @@
     brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
-    const exams = ExamStore.forLocal(brand.id, regional.id, zonal.id, localName);
+    const exams = ExamStore.forLocal(brand.id, localName);
     const total = exams.length;
     const aprobados = exams.filter((e) => e.resultado === "aprobado").length;
     const asistieron = exams.filter((e) => e.asistio).length;
@@ -574,15 +583,145 @@
     });
   }
 
+  // ---------- Mover zonales / locales ----------
+  function renderMover(brandId) {
+    const brand = getBrand(brandId);
+
+    if (!brand) {
+      navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }]);
+      appEl.innerHTML = `<div class="empty-state">No encontramos esa marca.<br><a href="#/">Volver</a></div>`;
+      return;
+    }
+
+    navCrumbEl.innerHTML = crumbs([
+      { label: "Campus" },
+      { hash: "#/", label: "Ascensos" },
+      { hash: `#/organigrama/${brand.id}`, label: brand.name },
+      { label: "Mover zonales / locales" },
+    ]);
+    brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
+    brandPillEl.style.setProperty("--brand-color", brand.color);
+
+    const org = OrgOverrides.effectiveOrg(brand);
+    const allZonales = [];
+    org.regionales.forEach((r) => r.zonales.forEach((z) => allZonales.push({ zonal: z, regional: r })));
+    const allLocals = [];
+    allZonales.forEach(({ zonal }) => zonal.locales.forEach((local) => allLocals.push({ local, zonal })));
+
+    const zonalOptions = allZonales
+      .map(({ zonal, regional }) => `<option value="${zonal.id}">${escapeHtml(zonal.name)} (hoy en ${escapeHtml(regional.name)})</option>`)
+      .join("");
+    const newRegionalOptions = brand.organigrama.regionales
+      .map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`)
+      .join("");
+    const localOptions = allLocals
+      .map(({ local, zonal }) => `<option value="${slugify(local)}">${escapeHtml(local)} (hoy en ${escapeHtml(zonal.name)})</option>`)
+      .join("");
+    const zonalTargetOptions = allZonales
+      .map(({ zonal, regional }) => `<option value="${zonal.id}">${escapeHtml(zonal.name)} — ${escapeHtml(regional.name)}</option>`)
+      .join("");
+
+    const moves = OrgOverrides.listMoves(brand);
+    const movesHtml = moves.length
+      ? moves
+          .map(
+            (m) =>
+              `<li>${escapeHtml(m.label)} <button class="undo-move" data-type="${m.type}" data-key="${escapeHtml(m.key)}">${icon("undo", { size: 13 })} Deshacer</button></li>`
+          )
+          .join("")
+      : `<li class="empty-table">No hay movimientos aplicados todavía.</li>`;
+
+    appEl.innerHTML = `
+      <button class="back-link" id="backLink">${icon("arrowLeft", { size: 14 })} Volver a ${escapeHtml(brand.name)}</button>
+
+      <div class="org-header">
+        <div class="org-brand-title">
+          ${brandLogo(brand)}
+          <div>
+            <h2>Mover zonales y locales</h2>
+            <p>${escapeHtml(brand.name)} · los cambios quedan guardados solo en este navegador</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mover-grid">
+        <form id="moveZonalForm" class="mover-card">
+          <h3>Mover una zonal a otro regional</h3>
+          <label>Zonal
+            <select name="zonalId">${zonalOptions}</select>
+          </label>
+          <label>Nuevo regional
+            <select name="regionalId">${newRegionalOptions}</select>
+          </label>
+          <button type="submit" class="btn-primary" style="--brand-color:${brand.color}">${icon("move", { size: 14 })} Mover zonal</button>
+        </form>
+
+        <form id="moveLocalForm" class="mover-card">
+          <h3>Mover un local a otra zonal</h3>
+          <label>Local
+            <select name="localSlug">${localOptions}</select>
+          </label>
+          <label>Nueva zonal
+            <select name="zonalId">${zonalTargetOptions}</select>
+          </label>
+          <button type="submit" class="btn-primary" style="--brand-color:${brand.color}">${icon("move", { size: 14 })} Mover local</button>
+        </form>
+      </div>
+
+      <p class="section-label">MOVIMIENTOS APLICADOS</p>
+      <ul class="mover-list">${movesHtml}</ul>
+      ${moves.length ? `<button class="btn-ghost" id="resetMovesBtn">Restablecer todo (volver al organigrama original)</button>` : ""}
+    `;
+
+    document.getElementById("backLink").addEventListener("click", () => {
+      window.location.hash = `#/organigrama/${brand.id}`;
+    });
+
+    document.getElementById("moveZonalForm").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const data = new FormData(ev.target);
+      OrgOverrides.moveZonal(brand.id, data.get("zonalId"), data.get("regionalId"));
+      renderMover(brand.id);
+    });
+
+    document.getElementById("moveLocalForm").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const data = new FormData(ev.target);
+      OrgOverrides.moveLocal(brand.id, data.get("localSlug"), data.get("zonalId"));
+      renderMover(brand.id);
+    });
+
+    appEl.querySelectorAll(".undo-move").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.dataset.type === "zonal") OrgOverrides.undoZonalMove(brand.id, btn.dataset.key);
+        else OrgOverrides.undoLocalMove(brand.id, btn.dataset.key);
+        renderMover(brand.id);
+      });
+    });
+
+    const resetBtn = document.getElementById("resetMovesBtn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        if (confirm(`¿Restablecer todos los movimientos de ${brand.name}?`)) {
+          OrgOverrides.resetBrand(brand.id);
+          renderMover(brand.id);
+        }
+      });
+    }
+  }
+
   // ---------- Router ----------
   function route() {
     const hash = window.location.hash || "#/";
     const localMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)$/);
+    const moverMatch = hash.match(/^#\/organigrama\/([^/]+)\/mover$/);
     const regionalMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)$/);
     const brandMatch = hash.match(/^#\/organigrama\/([^/]+)$/);
 
     if (localMatch) {
       renderLocal(localMatch[1], localMatch[2], localMatch[3], localMatch[4]);
+    } else if (moverMatch) {
+      renderMover(moverMatch[1]);
     } else if (regionalMatch) {
       renderRegional(regionalMatch[1], regionalMatch[2]);
     } else if (brandMatch) {

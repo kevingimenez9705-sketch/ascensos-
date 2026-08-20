@@ -661,6 +661,91 @@ main#app {
   margin-top: 20px;
 }
 
+/* ---------- Mover zonales / locales ---------- */
+.mover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.mover-card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mover-card h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.mover-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.mover-card select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #fff;
+}
+.mover-card .btn-primary {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.mover-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mover-list li {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mover-list li.empty-table {
+  justify-content: center;
+  color: var(--ink-soft);
+}
+
+.undo-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.undo-move:hover { color: var(--ink); }
+
 .table-scroll {
   overflow-x: auto;
   border-radius: var(--radius-md);
