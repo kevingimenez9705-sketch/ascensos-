@@ -305,6 +305,8 @@
       .join("");
 
     const stats = orgWideStats();
+    const today = new Date().toISOString().slice(0, 10);
+    const brandOptions = ASCENSOS_DATA.brands.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
 
     appEl.innerHTML = `
       <section class="hero">
@@ -319,6 +321,43 @@
         </div>
       </section>
 
+      <div class="quick-exam-section">
+        <button class="btn-primary" id="quickExamToggle" style="--brand-color:#1e293b">${icon("plus", { size: 14 })} Cargar examen</button>
+        <form id="quickExamForm" class="exam-form" hidden>
+          <p class="exam-form-hint">Elegí dónde se rindió el examen:</p>
+          <div class="exam-form-grid">
+            <label>Marca
+              <select name="brandId" id="qBrand" required>
+                <option value="">Elegí una marca</option>
+                ${brandOptions}
+              </select>
+            </label>
+            <label>Regional
+              <select name="regionalId" id="qRegional" required disabled>
+                <option value="">Primero elegí una marca</option>
+              </select>
+            </label>
+            <label>Zonal
+              <select name="zonalId" id="qZonal" required disabled>
+                <option value="">Primero elegí un regional</option>
+              </select>
+            </label>
+            <label>Local
+              <select name="localName" id="qLocal" required disabled>
+                <option value="">Primero elegí una zonal</option>
+              </select>
+            </label>
+          </div>
+          <div class="exam-form-grid exam-form-grid-spaced">
+            ${examFieldsHtml(today)}
+          </div>
+          <div class="exam-form-actions">
+            <button type="button" class="btn-ghost" id="quickExamCancel">Cancelar</button>
+            <button type="submit" class="btn-primary" id="quickExamSubmit" style="--brand-color:#1e293b" disabled>Guardar examen</button>
+          </div>
+        </form>
+      </div>
+
       <p class="section-label">MARCAS</p>
       <div class="brand-grid">${cards}</div>
 
@@ -330,6 +369,102 @@
       btn.addEventListener("click", () => {
         window.location.hash = `#/organigrama/${btn.dataset.brand}`;
       });
+    });
+
+    wireQuickExamForm();
+  }
+
+  // Formulario de "Cargar examen" de la home: selects en cascada
+  // (marca -> regional -> zonal -> local) + los mismos campos de siempre.
+  function wireQuickExamForm() {
+    const toggleBtn = document.getElementById("quickExamToggle");
+    const formEl = document.getElementById("quickExamForm");
+    const cancelBtn = document.getElementById("quickExamCancel");
+    const submitBtn = document.getElementById("quickExamSubmit");
+    const brandSelect = document.getElementById("qBrand");
+    const regionalSelect = document.getElementById("qRegional");
+    const zonalSelect = document.getElementById("qZonal");
+    const localSelect = document.getElementById("qLocal");
+
+    wireAsistioToggle(formEl);
+
+    function resetSelect(select, placeholder) {
+      select.innerHTML = `<option value="">${placeholder}</option>`;
+      select.disabled = true;
+    }
+
+    function updateSubmitState() {
+      submitBtn.disabled = !(brandSelect.value && regionalSelect.value && zonalSelect.value && localSelect.value);
+    }
+
+    brandSelect.addEventListener("change", () => {
+      resetSelect(regionalSelect, "Primero elegí una marca");
+      resetSelect(zonalSelect, "Primero elegí un regional");
+      resetSelect(localSelect, "Primero elegí una zonal");
+      updateSubmitState();
+      const brand = getBrand(brandSelect.value);
+      if (!brand) return;
+      const org = OrgOverrides.effectiveOrg(brand);
+      regionalSelect.innerHTML =
+        `<option value="">Elegí un regional</option>` +
+        org.regionales.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join("");
+      regionalSelect.disabled = false;
+    });
+
+    regionalSelect.addEventListener("change", () => {
+      resetSelect(zonalSelect, "Primero elegí un regional");
+      resetSelect(localSelect, "Primero elegí una zonal");
+      updateSubmitState();
+      const brand = getBrand(brandSelect.value);
+      const org = brand && OrgOverrides.effectiveOrg(brand);
+      const regional = org && getRegional(org, regionalSelect.value);
+      if (!regional) return;
+      zonalSelect.innerHTML =
+        `<option value="">Elegí una zonal</option>` +
+        regional.zonales.map((z) => `<option value="${z.id}">${escapeHtml(z.name)}</option>`).join("");
+      zonalSelect.disabled = false;
+    });
+
+    zonalSelect.addEventListener("change", () => {
+      resetSelect(localSelect, "Primero elegí una zonal");
+      updateSubmitState();
+      const brand = getBrand(brandSelect.value);
+      const org = brand && OrgOverrides.effectiveOrg(brand);
+      const regional = org && getRegional(org, regionalSelect.value);
+      const zonal = regional && getZonal(regional, zonalSelect.value);
+      if (!zonal) return;
+      localSelect.innerHTML =
+        `<option value="">Elegí un local</option>` +
+        zonal.locales.map((local) => `<option value="${escapeHtml(local)}">${escapeHtml(local)}</option>`).join("");
+      localSelect.disabled = false;
+    });
+
+    localSelect.addEventListener("change", updateSubmitState);
+
+    toggleBtn.addEventListener("click", () => {
+      formEl.hidden = !formEl.hidden;
+      if (!formEl.hidden) brandSelect.focus();
+    });
+    cancelBtn.addEventListener("click", () => {
+      formEl.reset();
+      resetSelect(regionalSelect, "Primero elegí una marca");
+      resetSelect(zonalSelect, "Primero elegí un regional");
+      resetSelect(localSelect, "Primero elegí una zonal");
+      updateSubmitState();
+      formEl.hidden = true;
+    });
+
+    formEl.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      ExamStore.add(
+        examRecordFromForm(formEl, {
+          brandId: brandSelect.value,
+          regionalId: regionalSelect.value,
+          zonalId: zonalSelect.value,
+          localName: localSelect.value,
+        })
+      );
+      route();
     });
   }
 
@@ -543,40 +678,7 @@
 
       <form id="examForm" class="exam-form" hidden>
         <div class="exam-form-grid">
-          <label>Nombre
-            <input type="text" name="nombre" required>
-          </label>
-          <label>Apellido
-            <input type="text" name="apellido" required>
-          </label>
-          <label>Puesto actual
-            <input type="text" name="puestoActual" placeholder="Ej: Cajero/a">
-          </label>
-          <label>Puesto al que postula
-            <input type="text" name="puestoPostula" placeholder="Ej: Encargado/a de turno">
-          </label>
-          <label>Fecha del examen
-            <input type="date" name="fecha" value="${today}" required>
-          </label>
-          <label>¿Asistió?
-            <select name="asistio" id="asistioSelect">
-              <option value="si">Sí</option>
-              <option value="no">No</option>
-            </select>
-          </label>
-          <label id="puntajeField">Puntaje (0-100)
-            <input type="number" name="puntaje" min="0" max="100" step="1">
-          </label>
-          <label id="resultadoField">Resultado
-            <select name="resultado">
-              <option value="pendiente">Pendiente de revisión</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="desaprobado">Desaprobado</option>
-            </select>
-          </label>
-          <label class="exam-form-full">Observaciones
-            <textarea name="observaciones" rows="2" placeholder="Opcional"></textarea>
-          </label>
+          ${examFieldsHtml(today)}
         </div>
         <div class="exam-form-actions">
           <button type="button" class="btn-ghost" id="cancelFormBtn">Cancelar</button>
@@ -612,17 +714,7 @@
     const formEl = document.getElementById("examForm");
     const toggleBtn = document.getElementById("toggleFormBtn");
     const cancelBtn = document.getElementById("cancelFormBtn");
-    const asistioSelect = document.getElementById("asistioSelect");
-    const puntajeField = document.getElementById("puntajeField");
-    const resultadoField = document.getElementById("resultadoField");
-
-    function syncAsistioFields() {
-      const asistio = asistioSelect.value === "si";
-      puntajeField.style.display = asistio ? "" : "none";
-      resultadoField.style.display = asistio ? "" : "none";
-    }
-    asistioSelect.addEventListener("change", syncAsistioFields);
-    syncAsistioFields();
+    wireAsistioToggle(formEl);
 
     toggleBtn.addEventListener("click", () => {
       formEl.hidden = !formEl.hidden;
@@ -635,25 +727,9 @@
 
     formEl.addEventListener("submit", (ev) => {
       ev.preventDefault();
-      const data = new FormData(formEl);
-      const asistio = data.get("asistio") === "si";
-      const puntajeRaw = data.get("puntaje");
-
-      ExamStore.add({
-        brandId: brand.id,
-        regionalId: regional.id,
-        zonalId: zonal.id,
-        localName: localName,
-        nombre: String(data.get("nombre") || "").trim(),
-        apellido: String(data.get("apellido") || "").trim(),
-        puestoActual: String(data.get("puestoActual") || "").trim(),
-        puestoPostula: String(data.get("puestoPostula") || "").trim(),
-        fecha: data.get("fecha"),
-        asistio,
-        puntaje: asistio && puntajeRaw !== "" ? Number(puntajeRaw) : null,
-        resultado: asistio ? data.get("resultado") : "no-asistio",
-        observaciones: String(data.get("observaciones") || "").trim(),
-      });
+      ExamStore.add(
+        examRecordFromForm(formEl, { brandId: brand.id, regionalId: regional.id, zonalId: zonal.id, localName })
+      );
 
       route();
     });
@@ -666,6 +742,85 @@
         }
       });
     });
+  }
+
+  // ---------- Formulario de examen: piezas reutilizables ----------
+  // Los campos del examen en sí (sin los selects de a dónde pertenece):
+  // se usan tanto en la vista de un local como en el "Cargar examen"
+  // rápido de la home.
+  function examFieldsHtml(today) {
+    return `
+      <label>Nombre
+        <input type="text" name="nombre" required>
+      </label>
+      <label>Apellido
+        <input type="text" name="apellido" required>
+      </label>
+      <label>Puesto actual
+        <input type="text" name="puestoActual" placeholder="Ej: Cajero/a">
+      </label>
+      <label>Puesto al que postula
+        <input type="text" name="puestoPostula" placeholder="Ej: Encargado/a de turno">
+      </label>
+      <label>Fecha del examen
+        <input type="date" name="fecha" value="${today}" required>
+      </label>
+      <label>¿Asistió?
+        <select name="asistio" class="asistio-select">
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label class="puntaje-field">Puntaje (0-100)
+        <input type="number" name="puntaje" min="0" max="100" step="1">
+      </label>
+      <label class="resultado-field">Resultado
+        <select name="resultado">
+          <option value="pendiente">Pendiente de revisión</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="desaprobado">Desaprobado</option>
+        </select>
+      </label>
+      <label class="exam-form-full">Observaciones
+        <textarea name="observaciones" rows="2" placeholder="Opcional"></textarea>
+      </label>`;
+  }
+
+  // Muestra/oculta puntaje y resultado según si asistió, dentro de un form dado.
+  function wireAsistioToggle(formEl) {
+    const asistioSelect = formEl.querySelector(".asistio-select");
+    const puntajeField = formEl.querySelector(".puntaje-field");
+    const resultadoField = formEl.querySelector(".resultado-field");
+    function sync() {
+      const asistio = asistioSelect.value === "si";
+      puntajeField.style.display = asistio ? "" : "none";
+      resultadoField.style.display = asistio ? "" : "none";
+    }
+    asistioSelect.addEventListener("change", sync);
+    sync();
+  }
+
+  // Arma el registro a guardar a partir del FormData de un form de examen
+  // + a qué local pertenece (ctx).
+  function examRecordFromForm(formEl, ctx) {
+    const data = new FormData(formEl);
+    const asistio = data.get("asistio") === "si";
+    const puntajeRaw = data.get("puntaje");
+    return {
+      brandId: ctx.brandId,
+      regionalId: ctx.regionalId,
+      zonalId: ctx.zonalId,
+      localName: ctx.localName,
+      nombre: String(data.get("nombre") || "").trim(),
+      apellido: String(data.get("apellido") || "").trim(),
+      puestoActual: String(data.get("puestoActual") || "").trim(),
+      puestoPostula: String(data.get("puestoPostula") || "").trim(),
+      fecha: data.get("fecha"),
+      asistio,
+      puntaje: asistio && puntajeRaw !== "" ? Number(puntajeRaw) : null,
+      resultado: asistio ? data.get("resultado") : "no-asistio",
+      observaciones: String(data.get("observaciones") || "").trim(),
+    };
   }
 
   // ---------- Mover zonales / locales ----------

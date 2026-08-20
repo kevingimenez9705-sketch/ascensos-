@@ -180,6 +180,13 @@ main#app {
 }
 .hero-stat b { color: #fff; }
 
+/* ---------- Cargar examen rápido (home) ---------- */
+.quick-exam-section {
+  margin: 24px 0 32px;
+}
+.quick-exam-section .exam-form {
+  margin-top: 14px;
+}
 
 /* ---------- Section heading ---------- */
 .section-label {
@@ -627,6 +634,11 @@ main#app {
   gap: 6px;
 }
 .btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
 
 .btn-ghost {
   background: none;
@@ -705,6 +717,15 @@ main#app {
   outline-offset: 1px;
 }
 .exam-form textarea { resize: vertical; }
+.exam-form select:disabled { background: #f5f6fa; color: var(--ink-soft); cursor: not-allowed; }
+
+.exam-form-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+
+.exam-form-grid-spaced { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--card-border); }
 
 .exam-form-actions {
   display: flex;
