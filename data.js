@@ -2,8 +2,17 @@
 // Fuente de datos del Campus de Ascensos.
 //
 // Todo es local y estático: no hay conexión a ningún backend. Para agregar
-// o modificar marcas, gerentes, zonas o locales, se edita directamente
+// o modificar marcas, regionales, zonales o locales, se edita directamente
 // este archivo.
+//
+// Forma del organigrama de cada marca (4 niveles, tal como viene el
+// organigrama oficial en PDF):
+//
+//   organigrama.comercial            -> GTE Comercial (uno solo, tope de la marca)
+//   organigrama.regionales[]         -> GTE Regional (cada uno con su Asistente de Operaciones)
+//     .asistente                     -> Asistente de Operaciones del regional
+//     .zonales[]                     -> GTE Zonal (reporta al regional)
+//       .locales[]                   -> nombres de los locales a cargo de ese zonal
 
 const ASCENSOS_DATA = {
   brands: [
@@ -16,26 +25,38 @@ const ASCENSOS_DATA = {
       logoText: "#e02424",
       manager: { name: "Evangelina Rodriguez", role: "GTE Comercial" },
       stats: { exams: 0, approved: 0, attendance: null },
+      // TODO: pendiente de reemplazar por el organigrama real de Hamburguesas
+      // Extremas (falta que nos pasen el PDF, igual que se hizo con Sabores
+      // Express). Mientras tanto queda esta estructura de ejemplo con la
+      // misma forma, para no romper la navegación.
       organigrama: {
-        gerenteRegional: {
-          name: "Evangelina Rodriguez",
-          role: "Gerente Regional",
-        },
-        zonas: [
+        pending: true,
+        comercial: { name: "Evangelina Rodriguez", role: "GTE Comercial" },
+        regionales: [
           {
-            id: "zona-norte",
-            gerenteZonal: { name: "Juan Pérez", role: "Gerente Zonal · Zona Norte" },
-            locales: [
-              { id: "hex-loc-1", name: "Sucursal Palermo", direccion: "Av. Santa Fe 3253" },
-              { id: "hex-loc-2", name: "Sucursal Belgrano", direccion: "Av. Cabildo 2040" },
-            ],
-          },
-          {
-            id: "zona-sur",
-            gerenteZonal: { name: "María López", role: "Gerente Zonal · Zona Sur" },
-            locales: [
-              { id: "hex-loc-3", name: "Sucursal Caballito", direccion: "Av. Rivadavia 5200" },
-              { id: "hex-loc-4", name: "Sucursal Flores", direccion: "Av. Rivadavia 7100" },
+            id: "regional-pendiente-1",
+            name: "(pendiente)",
+            role: "GTE Regional",
+            phone: null,
+            email: null,
+            asistente: null,
+            zonales: [
+              {
+                id: "zonal-pendiente-1",
+                name: "Juan Pérez",
+                role: "GTE Zonal",
+                phone: null,
+                email: null,
+                locales: ["Sucursal Palermo", "Sucursal Belgrano"],
+              },
+              {
+                id: "zonal-pendiente-2",
+                name: "María López",
+                role: "GTE Zonal",
+                phone: null,
+                email: null,
+                locales: ["Sucursal Caballito", "Sucursal Flores"],
+              },
             ],
           },
         ],
@@ -48,28 +69,335 @@ const ASCENSOS_DATA = {
       color: "#1d4ed8",
       logoBg: "#dbeafe",
       logoText: "#1d4ed8",
-      manager: { name: "Mauro Dalla Valle", role: "GTE Comercial" },
+      manager: {
+        name: "Mauro Dalla Valle",
+        role: "GTE Comercial",
+        phone: "11 2257 5088",
+        email: "mauro.dallavalle@saboresexpress.com.ar",
+      },
       stats: { exams: 0, approved: 0, attendance: null },
+      // Organigrama Sabores Express 2026 (fuente: PDF provisto por el usuario).
       organigrama: {
-        gerenteRegional: {
+        comercial: {
           name: "Mauro Dalla Valle",
-          role: "Gerente Regional",
+          role: "GTE Comercial",
+          phone: "11 2257 5088",
+          email: "mauro.dallavalle@saboresexpress.com.ar",
         },
-        zonas: [
+        regionales: [
           {
-            id: "zona-este",
-            gerenteZonal: { name: "Lucía Fernández", role: "Gerente Zonal · Zona Este" },
-            locales: [
-              { id: "sbx-loc-1", name: "Sucursal Once", direccion: "Av. Pueyrredón 800" },
-              { id: "sbx-loc-2", name: "Sucursal Retiro", direccion: "Av. Del Libertador 100" },
+            id: "ivo-pisaniello",
+            name: "Ivo Pisaniello",
+            role: "GTE Regional",
+            phone: "2494 24 5315",
+            email: "ivo.pisaniello@saboresexpress.com.ar",
+            asistente: {
+              name: "Isabel Leal",
+              role: "Asistente de Operaciones",
+              phone: "11 6374 9157",
+              email: "isabel.leal@saboresexpress.com.ar",
+            },
+            zonales: [
+              {
+                id: "tomas-moreno",
+                name: "Tomas Moreno",
+                role: "GTE Zonal",
+                phone: "11 2537 3963",
+                email: "tomas.moreno@saboresexpress.com.ar",
+                locales: ["Chilavert", "Caballito 1", "Lomas de Zamora 3", "Lomas de Zamora 4", "Lomas de Zamora 5"],
+              },
+              {
+                id: "greisnell-mejias",
+                name: "Greisnell Mejias",
+                role: "GTE Zonal",
+                phone: "11 2729 2158",
+                email: "greisnell.mejias@saboresexpress.com.ar",
+                locales: ["Santa Fe 1", "Villa Urquiza", "Entre Rios", "Boedo", "Pellegrini", "Villa del Parque"],
+              },
+              {
+                id: "lesley-duarte",
+                name: "Lesley Duarte",
+                role: "GTE Zonal (entrenando)",
+                phone: null,
+                email: "lesley.duarte@saboresexpress.com.ar",
+                locales: ["Liniers 1", "Liniers 2", "Ciudadela", "Pompeya"],
+              },
+              {
+                id: "ezequiel-acosta",
+                name: "Ezequiel Acosta",
+                role: "GTE Zonal",
+                phone: "11 2824 4248",
+                email: "ezequiel.acosta@saboresexpress.com.ar",
+                locales: ["Caballito 2", "Barracas", "Pueyrredon 1", "Pueyrredon 2", "Constitucion", "Flores"],
+              },
+              {
+                id: "douglas-seprum",
+                name: "Douglas Seprum",
+                role: "GTE Zonal",
+                phone: "11 5601 3213",
+                email: "douglas.seprum@saboresexpress.com.ar",
+                locales: ["Belgrano", "Lavalle 1", "Lavalle 2", "Tucuman", "Florida", "Retiro"],
+              },
             ],
           },
           {
-            id: "zona-oeste",
-            gerenteZonal: { name: "Diego Torres", role: "Gerente Zonal · Zona Oeste" },
-            locales: [
-              { id: "sbx-loc-3", name: "Sucursal Liniers", direccion: "Av. Rivadavia 11000" },
-              { id: "sbx-loc-4", name: "Sucursal Mataderos", direccion: "Av. Directorio 5800" },
+            id: "gustavo-cabrera",
+            name: "Gustavo Cabrera",
+            role: "GTE Regional",
+            phone: "11 3230 8121",
+            email: "gustavo.cabrera@saboresexpress.com.ar",
+            asistente: {
+              name: "Gabriel Rios",
+              role: "Asistente de Operaciones",
+              phone: "11 2323 2060",
+              email: "gabriel.rios@saboresexpress.com.ar",
+            },
+            zonales: [
+              {
+                id: "marianella-yniguez",
+                name: "Marianella Yñiguez",
+                role: "GTE Zonal",
+                phone: "11 3639 6883",
+                email: "marianella.yniguez@saboresexpress.com.ar",
+                locales: ["Jose C Paz 1", "Jose C Paz 2", "Del Viso", "Grand Bourg", "Don Torcuato"],
+              },
+              {
+                id: "camila-fredes",
+                name: "Camila Fredes",
+                role: "GTE Zonal",
+                phone: "11 3896 5385",
+                email: "camila.fredes@saboresexpress.com.ar",
+                locales: ["Santos Lugares", "Bella Vista", "William Morris", "Cruce Castelar", "Loma Hermosa"],
+              },
+              {
+                id: "pamela-maidana",
+                name: "Pamela Maidana",
+                role: "GTE Zonal",
+                phone: "11 2236 6756",
+                email: "pamela.maidana@saboresexpress.com.ar",
+                locales: ["Hurlingham 1", "Hurlingham 2", "Caseros 1", "Caseros 2", "El Palomar"],
+              },
+              {
+                id: "melanie-pueblas",
+                name: "Melanie Pueblas",
+                role: "GTE Zonal",
+                phone: "11 2536-5726",
+                email: "melanie.pueblas@saboresexpress.com.ar",
+                locales: ["Manuel Alberti", "Sourdeaux", "Tortuguitas", "Los Polvorines"],
+              },
+              {
+                id: "cecilia-montoya",
+                name: "Cecilia Montoya",
+                role: "GTE Zonal",
+                phone: "11 3256 2305",
+                email: "cecilia.montoya@saboresexpress.com.ar",
+                locales: ["San Miguel 1", "San Miguel 2", "San Miguel 3", "Pilar 1", "Pilar 2"],
+              },
+              {
+                id: "pamela-gimenez",
+                name: "Pamela Gimenez",
+                role: "GTE Zonal",
+                phone: "11 3203-0406",
+                email: "pamela.gimenez@saboresexpress.com.ar",
+                locales: ["Crovara", "Tapiales", "Laferrere 1", "Laferrere 2", "Gonzalez Catan"],
+              },
+            ],
+          },
+          {
+            id: "agustin-sbampato",
+            name: "Agustin Sbampato",
+            role: "GTE Regional",
+            phone: "11 4039 3729",
+            email: "agustin.sbampato@saboresexpress.com.ar",
+            asistente: {
+              name: "Natalia Giorgi",
+              role: "Asistente de Operaciones",
+              phone: "11 3913 8211",
+              email: "natalia.giorgi@saboresexpress.com.ar",
+            },
+            zonales: [
+              {
+                id: "franco-pedrazza",
+                name: "Franco Pedrazza",
+                role: "GTE Zonal",
+                phone: "11 5051 7407",
+                email: "franco.pedrazza@saboresexpress.com.ar",
+                locales: ["La Plata 1", "La Plata 2", "La Plata 3", "La Plata 4", "Lezama"],
+              },
+              {
+                id: "magali-sandoval",
+                name: "Magali Sandoval",
+                role: "GTE Zonal",
+                phone: "11 5574 5202",
+                email: "magali.sandoval@saboresexpress.com.ar",
+                locales: ["Berazategui 1", "Berazategui 2", "Solano", "Varela", "Cruce Varela", "Varela 2"],
+              },
+              {
+                id: "lujan-brandan",
+                name: "Lujan Brandan",
+                role: "GTE Zonal",
+                phone: "11 3595 7843",
+                email: "lujan.brandan@saboresexpress.com.ar",
+                locales: ["Mar del Plata 1", "Mar del Plata 2", "Mar del Plata 3", "Mar del Plata 4", "Mar del Plata 5"],
+              },
+              {
+                id: "adriana-alvarez",
+                name: "Adriana Alvarez",
+                role: "GTE Zonal",
+                phone: "11 2286 3972",
+                email: "adriana.alvarez@saboresexpress.com.ar",
+                locales: ["Adrogue", "Banfield", "Temperley 1", "Temperley 2", "Lanus 2", "Lanus 3"],
+              },
+              {
+                id: "camila-carranza",
+                name: "Camila Carranza",
+                role: "GTE Zonal",
+                phone: "11 4528 5187",
+                email: "camila.carranza@saboresexpress.com.ar",
+                locales: ["Claypole", "Quilmes 1", "Quilmes 2", "Quilmes 3", "Wilde", "Gerli"],
+              },
+              {
+                id: "michelle-alvarez",
+                name: "Michelle Alvarez",
+                role: "GTE Zonal",
+                phone: "11 2192 4072",
+                email: "michelle.alvarez@saboresexpress.com.ar",
+                locales: ["El Jaguel", "Monte Grande 1", "Monte Grande 2", "Tristan Suarez", "Glew", "Ezeiza"],
+              },
+              {
+                id: "tamara-migoya",
+                name: "Tamara Migoya",
+                role: "GTE Zonal",
+                phone: "11 3945-9178",
+                email: "tamara.migoya@saboresexpress.com.ar",
+                locales: ["Ciudadela (Mania)", "Isidro Casanova (Mania)", "Lanus 4", "Valentina Alsina", "Burzaco"],
+              },
+            ],
+          },
+          {
+            id: "marcelo-biurra",
+            name: "Marcelo Biurra",
+            role: "GTE Regional",
+            phone: "11 2807 0969",
+            email: "marcelo.biurra@saboresexpress.com.ar",
+            asistente: {
+              name: "Ezequiel Albornoz",
+              role: "Asistente de Operaciones",
+              phone: "11 5621 6850",
+              email: "ezequiel.albornoz@saboresexpress.com.ar",
+            },
+            zonales: [
+              {
+                id: "ronaldo-arguello",
+                name: "Ronaldo Arguello",
+                role: "GTE Zonal",
+                phone: "11 2696 0273",
+                email: "ronaldo.arguello@saboresexpress.com.ar",
+                locales: ["Zarate", "Escobar 1", "Maschwitz", "Boulogne", "Benavidez", "Escobar 2"],
+              },
+              {
+                id: "camila-almeida",
+                name: "Camila Almeida",
+                role: "GTE Zonal",
+                phone: "11 3586 2181",
+                email: "camila.almeida@saboresexpress.com.ar",
+                locales: ["San Fernando", "San Isidro 1", "San Isidro 2", "Virreyes", "Tigre", "Pacheco 2"],
+              },
+              {
+                id: "veronica-gonzalez",
+                name: "Veronica Gonzalez",
+                role: "GTE Zonal",
+                phone: "11 5315 1419",
+                email: "veronica.gonzalez@saboresexpress.com.ar",
+                locales: ["Pte Saavedra", "Vicente Lopez", "Munro", "Villa Adelina", "Jose Leon Suarez", "Martinez"],
+              },
+              {
+                id: "aylen-ponce",
+                name: "Aylen Ponce",
+                role: "GTE Zonal",
+                phone: "11 2834 4760",
+                email: "aylen.ponce@saboresexpress.com.ar",
+                locales: ["Pacheco 1", "El Talar", "Olivos", "Garin", "Savio"],
+              },
+              {
+                id: "micaela-ponce",
+                name: "Micaela Ponce",
+                role: "GTE Zonal",
+                phone: "11 2881 4811",
+                email: "micaela.ponce@saboresexpress.com.ar",
+                locales: ["San Martin 1", "San Martin 2", "Villa Ballester 1", "Villa Ballester 2"],
+              },
+              {
+                id: "giovanna-solerez",
+                name: "Giovanna Solerez",
+                role: "GTE Zonal",
+                phone: "11 2861-1873",
+                email: "giovanna.solerez@saboresexpress.com.ar",
+                locales: ["Rosario 1", "Rosario 2", "Rosario 3", "San Nicolas"],
+              },
+            ],
+          },
+          {
+            id: "lucia-velez",
+            name: "Lucia Velez",
+            role: "GTE Regional",
+            phone: "11 2317 2615",
+            email: "lucia.velez@saboresexpress.com.ar",
+            asistente: {
+              name: "Emanuel Mazueco",
+              role: "Asistente de Operaciones",
+              phone: "11 4166 0463",
+              email: "emanuel.mazueco@saboresexpress.com.ar",
+            },
+            zonales: [
+              {
+                id: "renata-fedullo",
+                name: "Renata Fedullo",
+                role: "GTE Zonal",
+                phone: "11 5039 8539",
+                email: "renata.fedullo@saboresexpress.com.ar",
+                locales: ["Ramos Mejia 1", "Ramos Mejia 2", "Ramos Mejia 3", "Haedo", "Ituzaingo"],
+              },
+              {
+                id: "pablo-muga",
+                name: "Pablo Muga",
+                role: "GTE Zonal",
+                phone: "11 7628 4782",
+                email: "pablo.muga@saboresexpress.com.ar",
+                locales: ["Moron 1", "Moron 2", "Moron 3", "Moron 4", "Moron 5"],
+              },
+              {
+                id: "nahuel-sanchez",
+                name: "Nahuel Sanchez",
+                role: "GTE Zonal",
+                phone: "11 6704 8185",
+                email: "nahuel.sanchez@saboresexpress.com.ar",
+                locales: ["Lujan", "General Rodriguez", "Moreno 1", "Moreno 2", "Paso del Rey"],
+              },
+              {
+                id: "malena-aguera",
+                name: "Malena Aguera",
+                role: "GTE Zonal",
+                phone: "11 2281 9980",
+                email: "malena.aguera@saboresexpress.com.ar",
+                locales: ["Merlo 1", "Merlo 2", "Merlo 3", "Rafael Castillo", "Padua"],
+              },
+              {
+                id: "ariana-gomez",
+                name: "Ariana Gomez",
+                role: "GTE Zonal",
+                phone: "11 3703 5062",
+                email: "ariana.gomez@saboresexpress.com.ar",
+                locales: ["Corrientes 1", "Corrientes 2", "Corrientes 3", "Corrientes 4"],
+              },
+              {
+                id: "agustina-sussi",
+                name: "Agustina Sussi",
+                role: "GTE Zonal",
+                phone: "11 2193 9543",
+                email: "agustina.sussi@saboresexpress.com.ar",
+                locales: ["Lomas del Mirador", "San Justo 1", "San Justo 2", "San Justo 3"],
+              },
             ],
           },
         ],

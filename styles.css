@@ -254,6 +254,17 @@ main#app {
 }
 
 /* Tree */
+.org-pending-banner {
+  background: #fff7e6;
+  border: 1px solid #f5d99b;
+  color: #8a5a00;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
 .org-tree {
   display: flex;
   flex-direction: column;
@@ -261,7 +272,7 @@ main#app {
   gap: 0;
 }
 
-.org-node {
+.org-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
@@ -269,15 +280,39 @@ main#app {
   padding: 14px 18px;
   min-width: 220px;
   text-align: center;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.org-node.regional {
+/* dentro de una grilla, la tarjeta ocupa toda su celda */
+.org-children-grid > .org-card {
+  width: 100%;
+}
+
+.org-card-top {
   border-top: 4px solid var(--brand-color, #333);
-  min-width: 260px;
+  min-width: 240px;
   padding: 18px 22px;
 }
 
-.org-node .role-tag {
+.org-card-secondary {
+  border-top-color: var(--card-border);
+  min-width: 220px;
+}
+
+.org-card-link {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.org-card-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -12px rgba(31, 35, 51, 0.25);
+}
+
+.role-tag {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -286,16 +321,25 @@ main#app {
   margin: 0 0 4px;
 }
 
-.org-node .person-name {
+.person-name {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
 }
 
-.org-node .person-sub {
+.person-contact {
   font-size: 12.5px;
   color: var(--ink-soft);
-  margin: 2px 0 0;
+  margin: 4px 0 0;
+}
+.person-email { word-break: break-all; }
+
+.org-card-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--card-border);
 }
 
 .org-connector {
@@ -304,73 +348,78 @@ main#app {
   background: var(--card-border);
 }
 
-.org-zonas-row {
+/* Par Regional + Asistente, unidos por una línea horizontal */
+.org-pair-row {
   display: flex;
-  gap: 0;
-  align-items: flex-start;
-  position: relative;
-  padding-top: 28px;
-}
-
-.org-zona-branch {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 0 24px;
-  position: relative;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* horizontal + vertical connector lines above each zona branch */
-.org-zona-branch::before {
-  content: "";
-  position: absolute;
-  top: -28px;
-  left: 50%;
-  width: 2px;
-  height: 28px;
-  background: var(--card-border);
-}
-
-.org-zonas-row.multi::after {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: calc(24px + 110px);
-  right: calc(24px + 110px);
+.org-connector-h {
+  width: 28px;
   height: 2px;
   background: var(--card-border);
 }
 
-.org-locales-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: stretch;
+@media (max-width: 600px) {
+  .org-connector-h { width: 2px; height: 20px; }
+}
+
+/* Grilla de hijos (regionales o zonales) colgando de un nodo padre */
+.org-children-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
+  width: 100%;
   margin-top: 28px;
+}
+
+.org-children-grid-zonales {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.org-children-grid > * {
   position: relative;
 }
 
-.org-locales-list::before {
+/* pequeño conector arriba de cada tarjeta hija */
+.org-children-grid > *::before {
   content: "";
   position: absolute;
-  top: -28px;
+  top: -20px;
   left: 50%;
   width: 2px;
-  height: 28px;
+  height: 20px;
   background: var(--card-border);
 }
 
-.org-local-card {
-  background: #fff;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  min-width: 200px;
-  font-size: 13.5px;
+.org-zonal-card {
+  text-align: left;
+  min-width: 0;
+}
+.org-zonal-card .role-tag,
+.org-zonal-card .person-contact,
+.org-zonal-card .person-name {
+  text-align: left;
 }
 
-.org-local-card .local-name { font-weight: 700; margin: 0; }
-.org-local-card .local-dir { color: var(--ink-soft); margin: 2px 0 0; font-size: 12px; }
+.org-locales-inline {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px dashed var(--card-border);
+  font-size: 12.5px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.org-locales-inline li::before {
+  content: "• ";
+  color: var(--brand-color, #999);
+}
 
 /* ---------- Empty / loading ---------- */
 .empty-state {
@@ -383,7 +432,5 @@ main#app {
   .topbar { padding: 14px 18px; }
   main#app { padding: 4px 18px 48px; }
   .hero { padding: 28px 24px; }
-  .org-zonas-row { flex-direction: column; align-items: center; gap: 28px; }
-  .org-zonas-row.multi::after { display: none; }
-  .org-zona-branch::before { display: none; }
+  .org-children-grid { grid-template-columns: 1fr; }
 }
