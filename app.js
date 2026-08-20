@@ -4,6 +4,10 @@
 //   #/organigrama/:brandId                        -> GTE Comercial + listado de Gerentes Regionales
 //   #/organigrama/:brandId/:regionalId             -> Gerente Regional + su Asistente + Gerentes Zonales y locales
 //   #/organigrama/:brandId/:regionalId/:zonalId/:localSlug -> exámenes de ascenso cargados en ese local
+//
+// Fotos y logos: ver assets/README.md para la convención de nombres de
+// archivo. Mientras no exista el archivo real, se muestra automáticamente
+// un avatar de iniciales (no hace falta tocar nada acá ni en data.js).
 
 (function () {
   const appEl = document.getElementById("app");
@@ -45,60 +49,120 @@
     ));
   }
 
-  function brandInitials(brand) {
-    if (brand.shortCode) return brand.shortCode;
-    return brand.name
+  function initialsOf(name) {
+    return String(name)
       .split(" ")
+      .filter(Boolean)
       .map((w) => w[0])
       .join("")
-      .slice(0, 3)
+      .slice(0, 2)
       .toUpperCase();
   }
 
-  function renderBrandLogo(brand) {
-    return `<div class="brand-logo" style="background:${brand.logoBg};color:${brand.logoText}">${brandInitials(brand)}</div>`;
+  function brandInitials(brand) {
+    return brand.shortCode || initialsOf(brand.name);
+  }
+
+  // Avatar circular de una persona. Busca assets/photos/<brandId>-<slug>.jpg
+  // (o .png); si no existe todavía, se ve directamente el círculo de
+  // iniciales de abajo — no hace falta ningún cambio en data.js.
+  function avatar(person, brandId, size) {
+    size = size || 44;
+    const slug = `${brandId}-${slugify(person.name)}`;
+    const jpg = `assets/photos/${slug}.jpg`;
+    const png = `assets/photos/${slug}.png`;
+    return `
+      <span class="avatar" style="--avatar-size:${size}px">
+        <span class="avatar-fallback">${escapeHtml(initialsOf(person.name))}</span>
+        <img class="avatar-img" alt="" src="${jpg}" data-fallback="${png}"
+             onload="this.style.opacity=1"
+             onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.fallback}else{this.style.display='none'}">
+      </span>`;
+  }
+
+  // Logo de marca (cuadrado redondeado). Busca assets/logos/<brandId>.jpg
+  // (o .png); si no existe, se ve el cuadrado de iniciales con los colores
+  // de la marca.
+  function brandLogo(brand, size) {
+    size = size || 56;
+    const jpg = `assets/logos/${brand.id}.jpg`;
+    const png = `assets/logos/${brand.id}.png`;
+    return `
+      <span class="brand-logo" style="--logo-size:${size}px;background:${brand.logoBg};color:${brand.logoText}">
+        <span class="brand-logo-fallback">${escapeHtml(brandInitials(brand))}</span>
+        <img class="brand-logo-img" alt="" src="${jpg}" data-fallback="${png}"
+             onload="this.style.opacity=1"
+             onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.fallback}else{this.style.display='none'}">
+      </span>`;
   }
 
   function crumbLink(hash, label) {
     return `<a href="${hash}">${escapeHtml(label)}</a>`;
   }
 
+  function crumbs(parts) {
+    // parts: [{hash, label} | {label}], el último va sin link.
+    return parts
+      .map((p, i) => {
+        const text = p.hash ? crumbLink(p.hash, p.label) : escapeHtml(p.label);
+        return i === 0 ? `<b>${text}</b>` : text;
+      })
+      .join(` ${icon("chevronRight", { size: 12, class: "crumb-sep" })} `);
+  }
+
   // Línea de contacto (teléfono / email), omite lo que no haya.
   function contactLines(person) {
     const lines = [];
-    if (person.phone) lines.push(`<p class="person-contact">📱 ${escapeHtml(person.phone)}</p>`);
-    if (person.email) lines.push(`<p class="person-contact person-email">${escapeHtml(person.email)}</p>`);
+    if (person.phone) {
+      lines.push(`<p class="person-contact">${icon("phone", { size: 12 })} ${escapeHtml(person.phone)}</p>`);
+    }
+    if (person.email) {
+      lines.push(`<p class="person-contact person-email">${icon("mail", { size: 12 })} ${escapeHtml(person.email)}</p>`);
+    }
     return lines.join("");
+  }
+
+  // Tarjeta de persona: avatar a la izquierda, info a la derecha.
+  // opts.extra: HTML libre agregado debajo de la fila (ej: lista de locales).
+  // opts.meta: línea de resumen con separador arriba (ej: "5 zonales · 27 locales").
+  // opts.tag: 'div' (default) o 'button', para tarjetas clickeables.
+  // opts.attrs: atributos HTML extra en la etiqueta raíz (ej: data-regional="...").
+  function personCard(person, brandId, opts) {
+    opts = opts || {};
+    const tag = opts.tag || "div";
+    const extraClass = opts.extraClass || "";
+    const size = opts.size || 44;
+    const attrs = opts.attrs || "";
+    return `
+      <${tag} class="org-card ${extraClass}" style="--brand-color:${opts.brandColor}" ${attrs}>
+        <div class="org-card-row">
+          ${avatar(person, brandId, size)}
+          <div class="org-card-body">
+            <p class="role-tag">${escapeHtml(person.role)}</p>
+            <p class="person-name">${escapeHtml(person.name)}</p>
+            ${contactLines(person)}
+          </div>
+        </div>
+        ${opts.extra || ""}
+        ${opts.meta ? `<p class="org-card-meta">${opts.meta}</p>` : ""}
+      </${tag}>`;
   }
 
   // Nodo principal + su par opcional (asistente / responsable), unidos por
   // una línea horizontal. Se usa tanto para GTE Comercial + su par como
   // para GTE Regional + su Asistente de Operaciones.
-  function renderPairRow(main, partner, brandColor) {
+  function renderPairRow(main, partner, brandId, brandColor) {
+    const mainCard = personCard(main, brandId, { extraClass: "org-card-top", brandColor, size: 52 });
     const partnerHtml = partner
-      ? `
-        <div class="org-connector org-connector-h"></div>
-        <div class="org-card org-card-top org-card-secondary" style="--brand-color:${brandColor}">
-          <p class="role-tag">${escapeHtml(partner.role)}</p>
-          <p class="person-name">${escapeHtml(partner.name)}</p>
-          ${contactLines(partner)}
-        </div>`
+      ? `<div class="org-connector org-connector-h"></div>${personCard(partner, brandId, { extraClass: "org-card-top org-card-secondary", brandColor, size: 44 })}`
       : "";
 
-    return `
-      <div class="org-pair-row">
-        <div class="org-card org-card-top" style="--brand-color:${brandColor}">
-          <p class="role-tag">${escapeHtml(main.role)}</p>
-          <p class="person-name">${escapeHtml(main.name)}</p>
-          ${contactLines(main)}
-        </div>
-        ${partnerHtml}
-      </div>`;
+    return `<div class="org-pair-row">${mainCard}${partnerHtml}</div>`;
   }
 
   // ---------- Home: listado de marcas ----------
   function renderHome() {
-    navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
+    navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
     brandPillEl.innerHTML = "";
 
     const cards = ASCENSOS_DATA.brands
@@ -107,7 +171,7 @@
         return `
           <div class="brand-card" style="--brand-color:${brand.color}">
             <div class="brand-card-top">
-              ${renderBrandLogo(brand)}
+              ${brandLogo(brand)}
               <div>
                 <p class="brand-name">${escapeHtml(brand.name)}</p>
                 <p class="brand-manager">${escapeHtml(brand.manager.name)} · ${escapeHtml(brand.manager.role)}</p>
@@ -116,14 +180,14 @@
             <div class="brand-stats">
               <b>${s.exams}</b> exámenes <b>${s.approved}</b> aprobados <b>${formatAttendance(s.attendance)}</b> asist.
             </div>
-            <button class="brand-link" data-brand="${brand.id}">Ver organigrama →</button>
+            <button class="brand-link" data-brand="${brand.id}">Ver organigrama ${icon("arrowRight", { size: 14 })}</button>
           </div>`;
       })
       .join("");
 
     appEl.innerHTML = `
       <section class="hero">
-        <div class="hero-badge">🎓 CAMPUS DE ASCENSOS</div>
+        <div class="hero-badge">${icon("cap", { size: 14 })} CAMPUS DE ASCENSOS</div>
         <h1>Buenos días, equipo de<span class="highlight">Capacitaciones</span></h1>
         <p>Elegí una marca para ver su organigrama y cargar exámenes de ascenso.</p>
       </section>
@@ -144,13 +208,17 @@
     const brand = getBrand(brandId);
 
     if (!brand) {
-      navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
+      navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }]);
       appEl.innerHTML = `<div class="empty-state">No encontramos esa marca.<br><a href="#/">Volver</a></div>`;
       return;
     }
 
-    navCrumbEl.innerHTML = `<b>Campus</b> &gt; ${crumbLink("#/", "Ascensos")} &gt; ${escapeHtml(brand.name)}`;
-    brandPillEl.innerHTML = `${renderBrandLogo(brand)} ${escapeHtml(brand.name)}`;
+    navCrumbEl.innerHTML = crumbs([
+      { label: "Campus" },
+      { hash: "#/", label: "Ascensos" },
+      { label: brand.name },
+    ]);
+    brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
     const org = brand.organigrama;
@@ -159,22 +227,22 @@
       .map((regional) => {
         const zonalesCount = regional.zonales.length;
         const localesCount = regional.zonales.reduce((n, z) => n + z.locales.length, 0);
-        return `
-          <button class="org-card org-card-link" style="--brand-color:${brand.color}" data-regional="${regional.id}">
-            <p class="role-tag">${escapeHtml(regional.role)}</p>
-            <p class="person-name">${escapeHtml(regional.name)}</p>
-            ${contactLines(regional)}
-            <p class="org-card-meta">${zonalesCount} zonales · ${localesCount} locales</p>
-          </button>`;
+        return personCard(regional, brand.id, {
+          tag: "button",
+          extraClass: "org-card-link",
+          brandColor: brand.color,
+          meta: `${zonalesCount} zonales · ${localesCount} locales`,
+          attrs: `data-regional="${regional.id}"`,
+        });
       })
       .join("");
 
     appEl.innerHTML = `
-      <button class="back-link" id="backLink">← Volver a marcas</button>
+      <button class="back-link" id="backLink">${icon("arrowLeft", { size: 14 })} Volver a marcas</button>
 
       <div class="org-header">
         <div class="org-brand-title">
-          ${renderBrandLogo(brand)}
+          ${brandLogo(brand)}
           <div>
             <h2>${escapeHtml(brand.name)}</h2>
             <p>Organigrama de ascensos</p>
@@ -182,10 +250,10 @@
         </div>
       </div>
 
-      ${org.pending ? `<div class="org-pending-banner">⚠️ Organigrama de ejemplo — pendiente de cargar los datos reales de ${escapeHtml(brand.name)}.</div>` : ""}
+      ${org.pending ? `<div class="org-pending-banner">${icon("warning", { size: 15 })} Organigrama de ejemplo — pendiente de cargar los datos reales de ${escapeHtml(brand.name)}.</div>` : ""}
 
       <div class="org-tree">
-        ${renderPairRow(org.comercial, org.comercial.asistente, brand.color)}
+        ${renderPairRow(org.comercial, org.comercial.asistente, brand.id, brand.color)}
         <div class="org-connector"></div>
         <div class="org-children-grid">${regionalCards}</div>
       </div>
@@ -207,13 +275,18 @@
     const regional = brand ? getRegional(brand, regionalId) : null;
 
     if (!brand || !regional) {
-      navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
+      navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }]);
       appEl.innerHTML = `<div class="empty-state">No encontramos ese regional.<br><a href="#/">Volver</a></div>`;
       return;
     }
 
-    navCrumbEl.innerHTML = `<b>Campus</b> &gt; ${crumbLink("#/", "Ascensos")} &gt; ${crumbLink(`#/organigrama/${brand.id}`, brand.name)} &gt; ${escapeHtml(regional.name)}`;
-    brandPillEl.innerHTML = `${renderBrandLogo(brand)} ${escapeHtml(brand.name)}`;
+    navCrumbEl.innerHTML = crumbs([
+      { label: "Campus" },
+      { hash: "#/", label: "Ascensos" },
+      { hash: `#/organigrama/${brand.id}`, label: brand.name },
+      { label: regional.name },
+    ]);
+    brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
     const zonalCards = regional.zonales
@@ -222,25 +295,24 @@
           .map((local) => {
             const count = ExamStore.countForLocal(brand.id, regional.id, zonal.id, local);
             const badge = count > 0 ? `<span class="local-badge">${count}</span>` : "";
-            return `<li><button class="local-link" data-zonal="${zonal.id}" data-local="${slugify(local)}">${escapeHtml(local)}${badge}</button></li>`;
+            return `<li><button class="local-link" data-zonal="${zonal.id}" data-local="${slugify(local)}">${icon("building", { size: 13 })} ${escapeHtml(local)}${badge}</button></li>`;
           })
           .join("");
-        return `
-          <div class="org-card org-zonal-card" style="--brand-color:${brand.color}">
-            <p class="role-tag">${escapeHtml(zonal.role)}</p>
-            <p class="person-name">${escapeHtml(zonal.name)}</p>
-            ${contactLines(zonal)}
-            <ul class="org-locales-inline">${locales}</ul>
-          </div>`;
+        return personCard(zonal, brand.id, {
+          extraClass: "org-zonal-card",
+          brandColor: brand.color,
+          size: 38,
+          extra: `<ul class="org-locales-inline">${locales}</ul>`,
+        });
       })
       .join("");
 
     appEl.innerHTML = `
-      <button class="back-link" id="backLink">← Volver a ${escapeHtml(brand.name)}</button>
+      <button class="back-link" id="backLink">${icon("arrowLeft", { size: 14 })} Volver a ${escapeHtml(brand.name)}</button>
 
       <div class="org-header">
         <div class="org-brand-title">
-          ${renderBrandLogo(brand)}
+          ${brandLogo(brand)}
           <div>
             <h2>${escapeHtml(regional.name)}</h2>
             <p>${escapeHtml(regional.role)} · ${escapeHtml(brand.name)}</p>
@@ -249,7 +321,7 @@
       </div>
 
       <div class="org-tree">
-        ${renderPairRow(regional, regional.asistente, brand.color)}
+        ${renderPairRow(regional, regional.asistente, brand.id, brand.color)}
         <div class="org-connector"></div>
         <div class="org-children-grid org-children-grid-zonales">${zonalCards}</div>
       </div>
@@ -273,13 +345,19 @@
     const localName = zonal ? getLocalName(zonal, localSlug) : null;
 
     if (!brand || !regional || !zonal || !localName) {
-      navCrumbEl.innerHTML = `<b>Campus</b> &gt; Ascensos`;
+      navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }]);
       appEl.innerHTML = `<div class="empty-state">No encontramos ese local.<br><a href="#/">Volver</a></div>`;
       return;
     }
 
-    navCrumbEl.innerHTML = `<b>Campus</b> &gt; ${crumbLink("#/", "Ascensos")} &gt; ${crumbLink(`#/organigrama/${brand.id}`, brand.name)} &gt; ${crumbLink(`#/organigrama/${brand.id}/${regional.id}`, regional.name)} &gt; ${escapeHtml(localName)}`;
-    brandPillEl.innerHTML = `${renderBrandLogo(brand)} ${escapeHtml(brand.name)}`;
+    navCrumbEl.innerHTML = crumbs([
+      { label: "Campus" },
+      { hash: "#/", label: "Ascensos" },
+      { hash: `#/organigrama/${brand.id}`, label: brand.name },
+      { hash: `#/organigrama/${brand.id}/${regional.id}`, label: regional.name },
+      { label: localName },
+    ]);
+    brandPillEl.innerHTML = `${brandLogo(brand, 26)} ${escapeHtml(brand.name)}`;
     brandPillEl.style.setProperty("--brand-color", brand.color);
 
     const exams = ExamStore.forLocal(brand.id, regional.id, zonal.id, localName);
@@ -300,7 +378,7 @@
             <td>${e.puntaje === null || e.puntaje === undefined ? "—" : escapeHtml(e.puntaje)}</td>
             <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
             <td class="col-obs">${e.observaciones ? escapeHtml(e.observaciones) : "—"}</td>
-            <td><button class="row-delete" data-id="${e.id}" title="Eliminar examen">🗑</button></td>
+            <td><button class="row-delete" data-id="${e.id}" title="Eliminar examen">${icon("trash", { size: 15 })}</button></td>
           </tr>`;
       })
       .join("");
@@ -308,17 +386,17 @@
     const today = new Date().toISOString().slice(0, 10);
 
     appEl.innerHTML = `
-      <button class="back-link" id="backLink">← Volver a ${escapeHtml(regional.name)}</button>
+      <button class="back-link" id="backLink">${icon("arrowLeft", { size: 14 })} Volver a ${escapeHtml(regional.name)}</button>
 
       <div class="org-header">
         <div class="org-brand-title">
-          ${renderBrandLogo(brand)}
+          ${brandLogo(brand)}
           <div>
             <h2>${escapeHtml(localName)}</h2>
             <p>${escapeHtml(zonal.name)} (GTE Zonal) · ${escapeHtml(regional.name)} · ${escapeHtml(brand.name)}</p>
           </div>
         </div>
-        <button class="btn-primary" id="toggleFormBtn" style="--brand-color:${brand.color}">+ Cargar examen</button>
+        <button class="btn-primary" id="toggleFormBtn" style="--brand-color:${brand.color}">${icon("plus", { size: 14 })} Cargar examen</button>
       </div>
 
       <div class="local-stats-row">
@@ -471,6 +549,10 @@
       renderHome();
     }
     window.scrollTo(0, 0);
+    appEl.classList.remove("fade-in");
+    // reflow para poder re-disparar la animación en cada navegación
+    void appEl.offsetWidth;
+    appEl.classList.add("fade-in");
   }
 
   window.addEventListener("hashchange", route);

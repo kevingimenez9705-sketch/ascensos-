@@ -21,6 +21,20 @@ body {
   color: var(--ink);
 }
 
+/* ---------- Iconos inline ---------- */
+.icon {
+  display: inline-block;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+
+/* ---------- Animación de entrada al navegar ---------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main#app.fade-in { animation: fadeInUp 0.22s ease; }
+
 /* ---------- Top bar ---------- */
 .topbar {
   display: flex;
@@ -32,9 +46,21 @@ body {
 .nav-crumb {
   font-size: 14px;
   color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.nav-crumb b { color: var(--ink); }
+.nav-crumb b { color: var(--ink); font-weight: 700; }
+
+.nav-crumb a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.nav-crumb a:hover { color: var(--ink); text-decoration: underline; }
+
+.crumb-sep { opacity: 0.5; flex-shrink: 0; }
 
 .topbar-right {
   display: flex;
@@ -165,18 +191,57 @@ main#app {
 }
 
 .brand-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  position: relative;
+  width: var(--logo-size, 56px);
+  height: var(--logo-size, 56px);
+  border-radius: calc(var(--logo-size, 56px) * 0.25);
   flex-shrink: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 18px;
   overflow: hidden;
 }
-.brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand-logo-fallback {
+  font-weight: 800;
+  font-size: calc(var(--logo-size, 56px) * 0.32);
+}
+.brand-logo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* ---------- Avatares de persona ---------- */
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar-size, 44px);
+  height: var(--avatar-size, 44px);
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--brand-color, #999);
+  color: #fff;
+  overflow: hidden;
+}
+.avatar-fallback {
+  font-weight: 700;
+  font-size: calc(var(--avatar-size, 44px) * 0.38);
+}
+.avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
 
 .brand-name { font-size: 19px; font-weight: 700; margin: 0; }
 .brand-manager { font-size: 13.5px; color: var(--ink-soft); margin: 2px 0 0; }
@@ -263,6 +328,9 @@ main#app {
   padding: 10px 16px;
   border-radius: 10px;
   margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .org-tree {
@@ -279,17 +347,29 @@ main#app {
   box-shadow: var(--shadow);
   padding: 14px 18px;
   min-width: 220px;
-  text-align: center;
+  text-align: left;
   font: inherit;
   color: inherit;
   appearance: none;
   -webkit-appearance: none;
   margin: 0;
+  display: block;
 }
 
 /* dentro de una grilla, la tarjeta ocupa toda su celda */
 .org-children-grid > .org-card {
   width: 100%;
+}
+
+.org-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.org-card-body {
+  min-width: 0;
+  flex: 1;
 }
 
 .org-card-top {
@@ -318,20 +398,25 @@ main#app {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--brand-color, #333);
-  margin: 0 0 4px;
+  margin: 0 0 3px;
 }
 
 .person-name {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
+  line-height: 1.25;
 }
 
 .person-contact {
   font-size: 12.5px;
   color: var(--ink-soft);
   margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
+.person-contact .icon { opacity: 0.7; }
 .person-email { word-break: break-all; }
 
 .org-card-meta {
@@ -396,13 +481,7 @@ main#app {
 }
 
 .org-zonal-card {
-  text-align: left;
   min-width: 0;
-}
-.org-zonal-card .role-tag,
-.org-zonal-card .person-contact,
-.org-zonal-card .person-name {
-  text-align: left;
 }
 
 .org-locales-inline {
@@ -414,12 +493,9 @@ main#app {
   color: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
-.org-locales-inline li::before {
-  content: "• ";
-  color: var(--brand-color, #999);
-}
+.org-locales-inline .icon { color: var(--brand-color, #999); opacity: 0.8; }
 
 .local-link {
   background: none;
@@ -461,6 +537,9 @@ main#app {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .btn-primary:hover { filter: brightness(1.08); }
 
