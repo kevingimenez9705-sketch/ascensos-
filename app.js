@@ -194,23 +194,6 @@
     return { brands: ASCENSOS_DATA.brands.length, people, locales };
   }
 
-  // Mini "foto de equipo": el comercial y el primer regional de cada
-  // marca, superpuestos como en un stack de avatares.
-  function heroAvatarsHtml() {
-    const faces = [];
-    ASCENSOS_DATA.brands.forEach((brand) => {
-      const org = brand.organigrama;
-      faces.push({ person: org.comercial, brand });
-      if (org.regionales[0]) faces.push({ person: org.regionales[0], brand });
-    });
-    return faces
-      .map(
-        ({ person, brand }) =>
-          `<span class="hero-avatar" style="--brand-color:${brand.color}">${avatar(person, brand.id, 48)}</span>`
-      )
-      .join("");
-  }
-
   // ---------- Home: listado de marcas ----------
   function renderHome() {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
@@ -240,7 +223,6 @@
 
     appEl.innerHTML = `
       <section class="hero">
-        <div class="hero-avatars">${heroAvatarsHtml()}</div>
         <div class="hero-badge">${icon("cap", { size: 14 })} CAMPUS DE ASCENSOS</div>
         <h1>${timeGreeting()}, equipo de<span class="highlight">Capacitaciones</span></h1>
         <p>Elegí una marca para ver su organigrama y cargar exámenes de ascenso.</p>

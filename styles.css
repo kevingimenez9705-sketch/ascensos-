@@ -6,8 +6,8 @@
   --card-border: #e7e9f2;
   --radius-lg: 20px;
   --radius-md: 14px;
-  --hero-from: #262a56;
-  --hero-to: #4a52b8;
+  --hero-from: #10182b;
+  --hero-to: #263449;
   --gold: #f5c451;
   --shadow: 0 10px 30px -12px rgba(31, 35, 51, 0.15);
 }
@@ -162,25 +162,6 @@ main#app {
   margin-top: 4px !important;
 }
 
-/* Mini "foto de equipo": avatares reales superpuestos arriba a la derecha */
-.hero-avatars {
-  position: absolute;
-  top: 28px;
-  right: 36px;
-  display: flex;
-  z-index: 1;
-}
-.hero-avatar {
-  --avatar-size: 48px;
-  margin-left: -14px;
-  border-radius: 50%;
-  box-shadow: 0 6px 16px rgba(15, 17, 40, 0.35);
-}
-.hero-avatar:first-child { margin-left: 0; }
-.hero-avatar .avatar {
-  border: 3px solid rgba(255, 255, 255, 0.9);
-}
-
 .hero-stats {
   display: flex;
   flex-wrap: wrap;
@@ -199,9 +180,6 @@ main#app {
 }
 .hero-stat b { color: #fff; }
 
-@media (max-width: 640px) {
-  .hero-avatars { display: none; }
-}
 
 /* ---------- Section heading ---------- */
 .section-label {
