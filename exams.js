@@ -97,18 +97,57 @@ const ExamStore = (function () {
     return forLocal(brandId, localName).length;
   }
 
-  // Estadísticas agregadas de una marca, para las cards de la home.
-  function statsForBrand(brandId) {
-    const list = forBrand(brandId);
+  // Estadísticas de una lista de exámenes: cantidad, aprobados, promedio
+  // de puntaje, % de asistencia y % de aprobados. El % de aprobados se
+  // calcula sobre quienes asistieron (a alguien que faltó no se lo puede
+  // calificar), no sobre el total cargado.
+  function computeStats(list) {
     const total = list.length;
-    const asistieron = list.filter((e) => e.asistio).length;
+    const asistieron = list.filter((e) => e.asistio);
     const aprobados = list.filter((e) => e.resultado === "aprobado").length;
+    const puntajes = list.filter((e) => typeof e.puntaje === "number").map((e) => e.puntaje);
+    const avgScore = puntajes.length ? puntajes.reduce((a, b) => a + b, 0) / puntajes.length : null;
+
     return {
       exams: total,
       approved: aprobados,
-      attendance: total ? `${Math.round((asistieron / total) * 100)}%` : null,
+      avgScore: avgScore === null ? null : Math.round(avgScore * 10) / 10,
+      attendancePct: total ? Math.round((asistieron.length / total) * 100) : null,
+      approvalPct: asistieron.length ? Math.round((aprobados / asistieron.length) * 100) : null,
     };
   }
 
-  return { forLocal, forBrand, add, remove, countForLocal, statsForBrand, localKey };
+  // Estadísticas de una marca entera, para las cards de la home.
+  function statsForBrand(brandId) {
+    return computeStats(forBrand(brandId));
+  }
+
+  // Estadísticas de un conjunto de locales (para un regional o una
+  // zonal): junta los exámenes de cada local nombrado y agrega.
+  function statsForLocalNames(brandId, localNames) {
+    const list = localNames.reduce((acc, name) => acc.concat(forLocal(brandId, name)), []);
+    return computeStats(list);
+  }
+
+  // Los N exámenes más recientes cargados en cualquier marca/local, para
+  // el panel de actividad reciente de la home.
+  function recent(limit) {
+    return exams
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit || 8);
+  }
+
+  return {
+    forLocal,
+    forBrand,
+    add,
+    remove,
+    countForLocal,
+    computeStats,
+    statsForBrand,
+    statsForLocalNames,
+    recent,
+    localKey,
+  };
 })();
