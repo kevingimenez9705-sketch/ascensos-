@@ -160,6 +160,57 @@
     return `<div class="org-pair-row">${mainCard}${partnerHtml}</div>`;
   }
 
+  // Saludo según la hora del día de quien está mirando la pantalla.
+  function timeGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return "Buenos días";
+    if (h < 19) return "Buenas tardes";
+    return "Buenas noches";
+  }
+
+  // Fecha de hoy en español, ej: "Miércoles 20 de agosto".
+  function todayLabel() {
+    const str = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // Totales de todo el campus (todas las marcas), para el banner.
+  function orgWideStats() {
+    let people = 0;
+    let locales = 0;
+    ASCENSOS_DATA.brands.forEach((brand) => {
+      const org = brand.organigrama;
+      people += 1;
+      if (org.comercial.asistente) people += 1;
+      org.regionales.forEach((r) => {
+        people += 1;
+        if (r.asistente) people += 1;
+        r.zonales.forEach((z) => {
+          people += 1;
+          locales += z.locales.length;
+        });
+      });
+    });
+    return { brands: ASCENSOS_DATA.brands.length, people, locales };
+  }
+
+  // Mini "foto de equipo": el comercial y el primer regional de cada
+  // marca, superpuestos como en un stack de avatares.
+  function heroAvatarsHtml() {
+    const faces = [];
+    ASCENSOS_DATA.brands.forEach((brand) => {
+      const org = brand.organigrama;
+      faces.push({ person: org.comercial, brand });
+      if (org.regionales[0]) faces.push({ person: org.regionales[0], brand });
+    });
+    return faces
+      .map(
+        ({ person, brand }) =>
+          `<span class="hero-avatar" style="--brand-color:${brand.color}">${avatar(person, brand.id, 48)}</span>`
+      )
+      .join("");
+  }
+
   // ---------- Home: listado de marcas ----------
   function renderHome() {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
@@ -185,11 +236,20 @@
       })
       .join("");
 
+    const stats = orgWideStats();
+
     appEl.innerHTML = `
       <section class="hero">
+        <div class="hero-avatars">${heroAvatarsHtml()}</div>
         <div class="hero-badge">${icon("cap", { size: 14 })} CAMPUS DE ASCENSOS</div>
-        <h1>Buenos días, equipo de<span class="highlight">Capacitaciones</span></h1>
+        <h1>${timeGreeting()}, equipo de<span class="highlight">Capacitaciones</span></h1>
         <p>Elegí una marca para ver su organigrama y cargar exámenes de ascenso.</p>
+        <p class="hero-date">${todayLabel()}</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><b>${stats.brands}</b> marcas</div>
+          <div class="hero-stat"><b>${stats.people}</b> personas en el organigrama</div>
+          <div class="hero-stat"><b>${stats.locales}</b> locales</div>
+        </div>
       </section>
 
       <p class="section-label">MARCAS</p>
