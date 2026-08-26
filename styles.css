@@ -271,7 +271,7 @@ main#app {
 }
 
 .team-card {
-  background: var(--card-bg);
+  background: #eef1f8;
   border: 1px solid var(--card-border);
   border-top: 4px solid var(--team-color, #999);
   border-radius: var(--radius-md);
