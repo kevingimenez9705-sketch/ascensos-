@@ -16,6 +16,12 @@ tocar código ni `data.js`, solo subir la imagen con el nombre exacto
 
 Un archivo por persona, nombrado `<marca>-<nombre-en-slug>.jpg`.
 
+### Equipo (pantalla de inicio)
+
+| Nombre | Rol | Archivo esperado |
+|---|---|---|
+| Angel | Jefe de Capacitación | `assets/photos/equipo-angel.jpg` (o `.png`) |
+| Emiliano | Capacitador | `assets/photos/equipo-emiliano.jpg` (o `.png`) |
 
 ### Hamburguesas Extremas
 
