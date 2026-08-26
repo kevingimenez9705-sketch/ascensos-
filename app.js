@@ -283,6 +283,51 @@
     return { brands: ASCENSOS_DATA.brands.length, people, locales };
   }
 
+  // ---------- Pantalla de inicio (previa al panel) ----------
+  // Solo presentación: muestra al equipo de Capacitaciones y un botón para
+  // entrar. No filtra ni identifica al usuario, es simplemente la portada
+  // que se ve antes de llegar al panel de marcas/exámenes.
+  const TEAM = [
+    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "", color: "#4a52b8" },
+    { id: "emiliano", name: "Emiliano", role: "Capacitador", trait: "Genuino", color: "#d97706" },
+  ];
+
+  function renderIntro(onEnter) {
+    navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
+    brandPillEl.innerHTML = "";
+
+    const cards = TEAM.map(
+      (person) => `
+        <div class="team-card" style="--team-color:${person.color}">
+          ${avatar(person, "equipo", 64)}
+          <p class="team-name">${escapeHtml(person.name)}</p>
+          <p class="team-role">${escapeHtml(person.role)}</p>
+          ${person.trait ? `<p class="team-trait">${escapeHtml(person.trait)}</p>` : ""}
+        </div>`
+    ).join("");
+
+    appEl.innerHTML = `
+      <section class="intro-hero">
+        <div class="intro-hero-left">
+          <span class="intro-hero-icon">${icon("cap", { size: 22 })}</span>
+          <div>
+            <p class="intro-hero-label">SISTEMA DE ASCENSOS</p>
+            <h1>Panel de <span class="highlight">Exámenes</span></h1>
+            <p class="intro-hero-sub">Acceso rápido al organigrama, los locales y los exámenes de ascenso.</p>
+          </div>
+        </div>
+        <button class="btn-primary intro-hero-btn" id="introEnter" style="--brand-color:#4a52b8">
+          Ir al Panel de Exámenes ${icon("arrowRight", { size: 14 })}
+        </button>
+      </section>
+
+      <p class="section-label">NUESTRO EQUIPO</p>
+      <div class="team-grid">${cards}</div>
+    `;
+
+    document.getElementById("introEnter").addEventListener("click", onEnter);
+  }
+
   // ---------- Home: listado de marcas ----------
   function renderHome() {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
@@ -1034,11 +1079,21 @@
 
   window.addEventListener("hashchange", route);
 
-  async function boot() {
-    appEl.innerHTML = `<div class="empty-state">${icon("cloud", { size: 18 })} Sincronizando datos…</div>`;
+  // Los exámenes se empiezan a sincronizar en cuanto carga la página (en
+  // paralelo a la pantalla de inicio), para que al tocar "Ir al Panel de
+  // Exámenes" ya estén listos y no haya que esperar de nuevo.
+  async function enterApp() {
+    if (!ExamStore.isLoaded()) {
+      appEl.innerHTML = `<div class="empty-state">${icon("cloud", { size: 18 })} Sincronizando datos…</div>`;
+    }
     await ExamStore.ensureLoaded();
     updateSyncPill();
     route();
+  }
+
+  async function boot() {
+    renderIntro(enterApp);
+    ExamStore.ensureLoaded(); // dispara la carga en segundo plano, no se espera acá
   }
 
   document.addEventListener("DOMContentLoaded", boot);

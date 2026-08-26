@@ -209,6 +209,104 @@ main#app {
   margin-top: 14px;
 }
 
+/* ---------- Pantalla de inicio (previa al panel) ---------- */
+.intro-hero {
+  background: linear-gradient(120deg, var(--hero-from), var(--hero-to));
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.intro-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.intro-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.intro-hero-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  margin: 0 0 2px;
+}
+
+.intro-hero h1 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+.intro-hero h1 .highlight { color: var(--gold); }
+
+.intro-hero-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  max-width: 460px;
+}
+
+.intro-hero-btn { flex-shrink: 0; }
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+}
+
+.team-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-top: 4px solid var(--team-color, #999);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.team-card .avatar { margin-bottom: 10px; }
+.team-card .avatar-fallback { background: var(--team-color, #999); }
+
+.team-name { font-size: 17px; font-weight: 700; margin: 0; }
+.team-role {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.team-trait {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--team-color, #999);
+  margin: 4px 0 0;
+}
+
+@media (max-width: 720px) {
+  .intro-hero { flex-direction: column; align-items: flex-start; }
+  .intro-hero-btn { align-self: stretch; justify-content: center; }
+}
+
 /* ---------- Section heading ---------- */
 .section-label {
   font-size: 12px;
