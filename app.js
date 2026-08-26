@@ -288,7 +288,7 @@
   // entrar. No filtra ni identifica al usuario, es simplemente la portada
   // que se ve antes de llegar al panel de marcas/exámenes.
   const TEAM = [
-    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "", color: "#4a52b8" },
+    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#4a52b8" },
     { id: "emiliano", name: "Emiliano", role: "Capacitador", trait: "Genuino", color: "#d97706" },
   ];
 
