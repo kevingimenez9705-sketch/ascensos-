@@ -289,22 +289,33 @@
   // que se ve antes de llegar al panel de marcas/exámenes.
   const TEAM = [
     { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#4a52b8" },
-    { id: "emiliano", name: "Emiliano", role: "Capacitador", trait: "Genuino", color: "#d97706" },
+    {
+      id: "emiliano",
+      name: "Emiliano",
+      role: "Capacitador",
+      trait: "Genuino",
+      color: "#d97706",
+      link: "https://www.autoproctor.co/tests/3omYZ4RJr5/instructions/",
+    },
   ];
 
   function renderIntro(onEnter) {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
     brandPillEl.innerHTML = "";
 
-    const cards = TEAM.map(
-      (person) => `
+    const cards = TEAM.map((person) => {
+      const photo = person.link
+        ? `<a class="avatar-link" href="${escapeHtml(person.link)}" target="_blank" rel="noopener noreferrer"
+              title="Ir al examen de ${escapeHtml(person.name)}">${avatar(person, "equipo", 64)}</a>`
+        : avatar(person, "equipo", 64);
+      return `
         <div class="team-card" style="--team-color:${person.color}">
-          ${avatar(person, "equipo", 64)}
+          ${photo}
           <p class="team-name">${escapeHtml(person.name)}</p>
           <p class="team-role">${escapeHtml(person.role)}</p>
           ${person.trait ? `<p class="team-trait">${escapeHtml(person.trait)}</p>` : ""}
-        </div>`
-    ).join("");
+        </div>`;
+    }).join("");
 
     appEl.innerHTML = `
       <section class="intro-hero">
