@@ -286,6 +286,19 @@ main#app {
 .team-card .avatar { margin-bottom: 10px; }
 .team-card .avatar-fallback { background: var(--team-color, #999); }
 
+.avatar-link {
+  display: inline-flex;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.avatar-link:hover,
+.avatar-link:focus-visible {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px var(--team-color, #999);
+  outline: none;
+}
+
 .team-name { font-size: 17px; font-weight: 700; margin: 0; }
 .team-role {
   font-size: 12px;
