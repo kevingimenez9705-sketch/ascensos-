@@ -283,11 +283,15 @@ main#app {
   text-align: center;
   gap: 4px;
 }
-.team-card .avatar { margin-bottom: 10px; }
+.team-card > .avatar,
+.team-card > .avatar-link { margin-bottom: 10px; }
 .team-card .avatar-fallback { background: var(--team-color, #999); }
 
 .avatar-link {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
   border-radius: 50%;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;

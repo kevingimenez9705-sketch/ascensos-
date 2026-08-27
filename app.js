@@ -306,7 +306,7 @@
     const cards = TEAM.map((person) => {
       const photo = person.link
         ? `<a class="avatar-link" href="${escapeHtml(person.link)}" target="_blank" rel="noopener noreferrer"
-              title="Ir al examen de ${escapeHtml(person.name)}">${avatar(person, "equipo", 64)}</a>`
+              title="Ir al examen de ${escapeHtml(person.name)}">${avatar(person, "equipo", 64).trim()}</a>`
         : avatar(person, "equipo", 64);
       return `
         <div class="team-card" style="--team-color:${person.color}">
