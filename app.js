@@ -305,6 +305,7 @@
     { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#2ea8dc", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
     { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#14577a", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
     { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#90a4ae", href: null },
+    { name: "Cronograma", image: "assets/logos/Cronograma.png", color: "#4f7cac", href: null },
   ];
 
   function renderIntro(onEnter) {
