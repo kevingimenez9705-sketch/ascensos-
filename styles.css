@@ -372,8 +372,8 @@ body.intro-active .section-label {
   flex-shrink: 0;
   border-radius: 16px;
   overflow: hidden;
-  padding: 8px;
-  background: color-mix(in srgb, var(--link-color, #999) 22%, white);
+  padding: 4px;
+  background: #fff;
 }
 .quicklink-icon img {
   width: 100%;
