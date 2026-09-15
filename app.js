@@ -300,11 +300,11 @@
   ];
 
   const QUICK_LINKS = [
-    { name: "Icheck", icon: "checkCircle", color: "#2f9e6b", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
-    { name: "Bloques A2", icon: "grid", color: "#4a52b8", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
-    { name: "Organigramas", icon: "sitemap", color: "#d97706", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
-    { name: "Manuales", icon: "book", color: "#2563eb", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
-    { name: "Evaluaciones", icon: "clipboardCheck", color: "#9ca3af", href: null },
+    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#2f9e6b", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
+    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#4a52b8", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
+    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#d97706", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
+    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#2563eb", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#9ca3af", href: null },
   ];
 
   function renderIntro(onEnter) {
@@ -313,7 +313,7 @@
 
     const quickLinks = QUICK_LINKS.map((link) => {
       const inner = `
-        <span class="quicklink-icon">${icon(link.icon, { size: 20 })}</span>
+        <span class="quicklink-icon"><img src="${encodeURI(link.image)}" alt=""></span>
         <span class="quicklink-name">${escapeHtml(link.name)}</span>`;
       return link.href
         ? `<a class="quicklink-card" style="--link-color:${link.color}" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
