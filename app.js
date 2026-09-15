@@ -288,28 +288,29 @@
   // entrar. No filtra ni identifica al usuario, es simplemente la portada
   // que se ve antes de llegar al panel de marcas/exámenes.
   const TEAM = [
-    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#4a52b8" },
+    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#6c63ff" },
     {
       id: "emiliano",
       name: "Emiliano",
       role: "Capacitador",
       trait: "Genuino",
-      color: "#d97706",
+      color: "#ff8c42",
       link: "https://www.autoproctor.co/tests/3omYZ4RJr5/instructions/",
     },
   ];
 
   const QUICK_LINKS = [
-    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#2f9e6b", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
-    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#4a52b8", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
-    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#d97706", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
-    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#2563eb", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
-    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#9ca3af", href: null },
+    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#2bb673", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
+    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#6c63ff", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
+    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#ff8c42", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
+    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#3aa0ff", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#ff5c8a", href: null },
   ];
 
   function renderIntro(onEnter) {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
     brandPillEl.innerHTML = "";
+    document.body.classList.add("intro-active");
 
     const quickLinks = QUICK_LINKS.map((link) => {
       const inner = `
@@ -1114,6 +1115,7 @@
   // paralelo a la pantalla de inicio), para que al tocar "Ir al Panel de
   // Exámenes" ya estén listos y no haya que esperar de nuevo.
   async function enterApp() {
+    document.body.classList.remove("intro-active");
     if (!ExamStore.isLoaded()) {
       appEl.innerHTML = `<div class="empty-state">${icon("cloud", { size: 18 })} Sincronizando datos…</div>`;
     }
