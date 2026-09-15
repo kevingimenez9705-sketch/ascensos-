@@ -264,6 +264,56 @@ main#app {
 
 .intro-hero-btn { flex-shrink: 0; }
 
+.quicklinks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.quicklink-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 4px solid var(--link-color, #999);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.quicklink-card:hover,
+.quicklink-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -14px rgba(31, 35, 51, 0.25);
+  outline: none;
+}
+.quicklink-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.quicklink-card-disabled:hover { transform: none; box-shadow: var(--shadow); }
+
+.quicklink-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--link-color, #999) 16%, white);
+  color: var(--link-color, #999);
+}
+
+.quicklink-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .team-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

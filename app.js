@@ -299,9 +299,26 @@
     },
   ];
 
+  const QUICK_LINKS = [
+    { name: "Icheck", icon: "checkCircle", color: "#2f9e6b", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
+    { name: "Bloques A2", icon: "grid", color: "#4a52b8", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
+    { name: "Organigramas", icon: "sitemap", color: "#d97706", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
+    { name: "Manuales", icon: "book", color: "#2563eb", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    { name: "Evaluaciones", icon: "clipboardCheck", color: "#9ca3af", href: null },
+  ];
+
   function renderIntro(onEnter) {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { label: "Ascensos" }]);
     brandPillEl.innerHTML = "";
+
+    const quickLinks = QUICK_LINKS.map((link) => {
+      const inner = `
+        <span class="quicklink-icon">${icon(link.icon, { size: 20 })}</span>
+        <span class="quicklink-name">${escapeHtml(link.name)}</span>`;
+      return link.href
+        ? `<a class="quicklink-card" style="--link-color:${link.color}" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+        : `<div class="quicklink-card quicklink-card-disabled" style="--link-color:${link.color}" title="Próximamente">${inner}</div>`;
+    }).join("");
 
     const cards = TEAM.map((person) => {
       const photo = person.link
@@ -331,6 +348,9 @@
           Ir al Panel de Exámenes ${icon("arrowRight", { size: 14 })}
         </button>
       </section>
+
+      <p class="section-label">ACCESOS RÁPIDOS</p>
+      <div class="quicklinks-grid">${quickLinks}</div>
 
       <p class="section-label">NUESTRO EQUIPO</p>
       <div class="team-grid">${cards}</div>
