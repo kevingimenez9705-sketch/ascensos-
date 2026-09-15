@@ -329,20 +329,20 @@ body.intro-active .section-label {
 
 .quicklinks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
   margin-bottom: 8px;
 }
 
 .quicklink-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   background: color-mix(in srgb, var(--link-color, #999) 10%, #fff);
   border: 1px solid color-mix(in srgb, var(--link-color, #999) 30%, #fff);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--link-color, #999) 60%, transparent);
-  padding: 14px 16px;
+  padding: 20px 22px;
   text-decoration: none;
   color: var(--ink);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -363,10 +363,10 @@ body.intro-active .section-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
   background: color-mix(in srgb, var(--link-color, #999) 16%, white);
 }
@@ -378,7 +378,7 @@ body.intro-active .section-label {
 
 .quicklink-name {
   font-family: "Quicksand", "Segoe UI", sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 
