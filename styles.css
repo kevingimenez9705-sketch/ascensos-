@@ -209,10 +209,48 @@ main#app {
   margin-top: 14px;
 }
 
-/* ---------- Pantalla de inicio (previa al panel) ---------- */
+/* ---------- Pantalla de inicio (previa al panel): fondo primaveral ---------- */
+body.intro-active {
+  background: linear-gradient(160deg, #fff7ec 0%, #ffeef5 45%, #eafaf1 100%);
+  min-height: 100vh;
+}
+body.intro-active::before,
+body.intro-active::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+body.intro-active::before {
+  top: -120px;
+  left: -110px;
+  width: 320px;
+  height: 320px;
+  background: #ffb4c6;
+}
+body.intro-active::after {
+  bottom: -140px;
+  right: -120px;
+  width: 380px;
+  height: 380px;
+  background: #8fe3c0;
+}
+body.intro-active .topbar,
+body.intro-active main#app {
+  position: relative;
+  z-index: 1;
+}
+body.intro-active .section-label {
+  color: #a3467a;
+  font-weight: 800;
+}
+
 .intro-hero {
-  background: linear-gradient(120deg, var(--hero-from), var(--hero-to));
-  border-radius: var(--radius-lg);
+  background: linear-gradient(120deg, #ff7eb3 0%, #ff9a6c 55%, #ffd166 100%);
+  border-radius: 26px;
   padding: 28px 32px;
   color: #fff;
   display: flex;
@@ -221,6 +259,7 @@ main#app {
   gap: 24px;
   flex-wrap: wrap;
   margin-bottom: 32px;
+  box-shadow: 0 20px 40px -20px rgba(255, 111, 145, 0.55);
 }
 
 .intro-hero-left {
@@ -235,34 +274,58 @@ main#app {
   justify-content: center;
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
 }
 
 .intro-hero-label {
-  font-size: 12px;
+  display: inline-block;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--gold);
-  margin: 0 0 2px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin: 0 0 8px;
 }
 
 .intro-hero h1 {
-  font-size: 26px;
+  font-family: "Quicksand", "Segoe UI", sans-serif;
+  font-size: 27px;
   font-weight: 800;
   margin: 0 0 6px;
 }
-.intro-hero h1 .highlight { color: var(--gold); }
+.intro-hero h1 .highlight {
+  display: inline-block;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 1px 10px;
+  border-radius: 8px;
+}
 
 .intro-hero-sub {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.92);
   margin: 0;
   max-width: 460px;
 }
 
-.intro-hero-btn { flex-shrink: 0; }
+.intro-hero-btn {
+  flex-shrink: 0;
+  background: #fff;
+  color: #ff6f91;
+  border-radius: 999px;
+  padding: 12px 22px;
+  box-shadow: 0 10px 22px -10px rgba(43, 15, 30, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.intro-hero-btn:hover {
+  filter: none;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px -10px rgba(43, 15, 30, 0.5);
+}
 
 .quicklinks-grid {
   display: grid;
@@ -275,11 +338,10 @@ main#app {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-left: 4px solid var(--link-color, #999);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--link-color, #999) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--link-color, #999) 30%, #fff);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--link-color, #999) 60%, transparent);
   padding: 14px 16px;
   text-decoration: none;
   color: var(--ink);
@@ -287,15 +349,15 @@ main#app {
 }
 .quicklink-card:hover,
 .quicklink-card:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px -14px rgba(31, 35, 51, 0.25);
+  transform: translateY(-3px) rotate(-0.5deg);
+  box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--link-color, #999) 70%, transparent);
   outline: none;
 }
 .quicklink-card-disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
 }
-.quicklink-card-disabled:hover { transform: none; box-shadow: var(--shadow); }
+.quicklink-card-disabled:hover { transform: none; box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--link-color, #999) 60%, transparent); }
 
 .quicklink-icon {
   display: inline-flex;
@@ -315,6 +377,7 @@ main#app {
 }
 
 .quicklink-name {
+  font-family: "Quicksand", "Segoe UI", sans-serif;
   font-size: 14px;
   font-weight: 700;
 }
@@ -326,17 +389,21 @@ main#app {
 }
 
 .team-card {
-  background: #eef1f8;
-  border: 1px solid var(--card-border);
-  border-top: 4px solid var(--team-color, #999);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--team-color, #999) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--team-color, #999) 30%, #fff);
+  border-radius: 22px;
+  box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--team-color, #999) 65%, transparent);
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 4px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.team-card:hover {
+  transform: translateY(-3px) rotate(0.4deg);
+  box-shadow: 0 18px 34px -16px color-mix(in srgb, var(--team-color, #999) 75%, transparent);
 }
 .team-card > .avatar,
 .team-card > .avatar-link { margin-bottom: 10px; }
@@ -358,7 +425,7 @@ main#app {
   outline: none;
 }
 
-.team-name { font-size: 17px; font-weight: 700; margin: 0; }
+.team-name { font-family: "Quicksand", "Segoe UI", sans-serif; font-size: 18px; font-weight: 800; margin: 0; }
 .team-role {
   font-size: 12px;
   font-weight: 700;
