@@ -209,9 +209,9 @@ main#app {
   margin-top: 14px;
 }
 
-/* ---------- Pantalla de inicio (previa al panel): fondo primaveral ---------- */
+/* ---------- Pantalla de inicio (previa al panel): fondo otoñal ---------- */
 body.intro-active {
-  background: linear-gradient(160deg, #fff7ec 0%, #ffeef5 45%, #eafaf1 100%);
+  background: linear-gradient(160deg, #fdf3e3 0%, #fbe4c8 45%, #f3d6ae 100%);
   min-height: 100vh;
 }
 body.intro-active::before,
@@ -229,14 +229,14 @@ body.intro-active::before {
   left: -110px;
   width: 320px;
   height: 320px;
-  background: #ffb4c6;
+  background: #e0972d;
 }
 body.intro-active::after {
   bottom: -140px;
   right: -120px;
   width: 380px;
   height: 380px;
-  background: #8fe3c0;
+  background: #8c3b3b;
 }
 body.intro-active .topbar,
 body.intro-active main#app {
@@ -244,12 +244,12 @@ body.intro-active main#app {
   z-index: 1;
 }
 body.intro-active .section-label {
-  color: #a3467a;
+  color: #7a3b2e;
   font-weight: 800;
 }
 
 .intro-hero {
-  background: linear-gradient(120deg, #ff7eb3 0%, #ff9a6c 55%, #ffd166 100%);
+  background: linear-gradient(120deg, #b5541a 0%, #d9772b 55%, #e8ab3c 100%);
   border-radius: 26px;
   padding: 28px 32px;
   color: #fff;
@@ -259,7 +259,7 @@ body.intro-active .section-label {
   gap: 24px;
   flex-wrap: wrap;
   margin-bottom: 32px;
-  box-shadow: 0 20px 40px -20px rgba(255, 111, 145, 0.55);
+  box-shadow: 0 20px 40px -20px rgba(154, 66, 15, 0.55);
 }
 
 .intro-hero-left {
@@ -315,7 +315,7 @@ body.intro-active .section-label {
 .intro-hero-btn {
   flex-shrink: 0;
   background: #fff;
-  color: #ff6f91;
+  color: #b5541a;
   border-radius: 999px;
   padding: 12px 22px;
   box-shadow: 0 10px 22px -10px rgba(43, 15, 30, 0.45);

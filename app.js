@@ -288,23 +288,23 @@
   // entrar. No filtra ni identifica al usuario, es simplemente la portada
   // que se ve antes de llegar al panel de marcas/exámenes.
   const TEAM = [
-    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#6c63ff" },
+    { id: "angel", name: "Angel", role: "Jefe de Capacitación", trait: "Mágico", color: "#556b2f" },
     {
       id: "emiliano",
       name: "Emiliano",
       role: "Capacitador",
       trait: "Genuino",
-      color: "#ff8c42",
+      color: "#c1440e",
       link: "https://www.autoproctor.co/tests/3omYZ4RJr5/instructions/",
     },
   ];
 
   const QUICK_LINKS = [
-    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#2bb673", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
-    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#6c63ff", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
-    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#ff8c42", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
-    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#3aa0ff", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
-    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#ff5c8a", href: null },
+    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#8c5a2b", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
+    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#7a2e2e", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
+    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#d98324", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
+    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#c98a1f", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#a68a64", href: null },
   ];
 
   function renderIntro(onEnter) {
