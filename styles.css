@@ -338,10 +338,11 @@ body.intro-active .section-label {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: color-mix(in srgb, var(--link-color, #999) 10%, #fff);
-  border: 1px solid color-mix(in srgb, var(--link-color, #999) 30%, #fff);
+  background: #fff;
+  border: 1.5px solid color-mix(in srgb, var(--link-color, #999) 45%, #fff);
+  border-left: 6px solid var(--link-color, #999);
   border-radius: 20px;
-  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--link-color, #999) 60%, transparent);
+  box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--link-color, #999) 75%, transparent);
   padding: 20px 22px;
   text-decoration: none;
   color: var(--ink);
@@ -350,14 +351,14 @@ body.intro-active .section-label {
 .quicklink-card:hover,
 .quicklink-card:focus-visible {
   transform: translateY(-3px) rotate(-0.5deg);
-  box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--link-color, #999) 70%, transparent);
+  box-shadow: 0 18px 32px -12px color-mix(in srgb, var(--link-color, #999) 80%, transparent);
   outline: none;
 }
 .quicklink-card-disabled {
   cursor: not-allowed;
-  opacity: 0.65;
+  opacity: 0.7;
 }
-.quicklink-card-disabled:hover { transform: none; box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--link-color, #999) 60%, transparent); }
+.quicklink-card-disabled:hover { transform: none; box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--link-color, #999) 75%, transparent); }
 
 .quicklink-icon {
   display: inline-flex;
@@ -368,7 +369,7 @@ body.intro-active .section-label {
   flex-shrink: 0;
   border-radius: 14px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--link-color, #999) 16%, white);
+  background: color-mix(in srgb, var(--link-color, #999) 22%, white);
 }
 .quicklink-icon img {
   width: 100%;
@@ -389,10 +390,11 @@ body.intro-active .section-label {
 }
 
 .team-card {
-  background: color-mix(in srgb, var(--team-color, #999) 12%, #fff);
-  border: 1px solid color-mix(in srgb, var(--team-color, #999) 30%, #fff);
+  background: #fff;
+  border: 1.5px solid color-mix(in srgb, var(--team-color, #999) 40%, #fff);
+  border-top: 6px solid var(--team-color, #999);
   border-radius: 22px;
-  box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--team-color, #999) 65%, transparent);
+  box-shadow: 0 16px 30px -16px color-mix(in srgb, var(--team-color, #999) 80%, transparent);
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
@@ -403,7 +405,7 @@ body.intro-active .section-label {
 }
 .team-card:hover {
   transform: translateY(-3px) rotate(0.4deg);
-  box-shadow: 0 18px 34px -16px color-mix(in srgb, var(--team-color, #999) 75%, transparent);
+  box-shadow: 0 20px 36px -14px color-mix(in srgb, var(--team-color, #999) 85%, transparent);
 }
 .team-card > .avatar,
 .team-card > .avatar-link { margin-bottom: 10px; }
