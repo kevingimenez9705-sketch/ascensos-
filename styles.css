@@ -1430,3 +1430,27 @@ body.intro-active .section-label { color: var(--forest); }
   .intro-hero h1 { font-size: 30px; }
   .org-header h2, .org-brand-title h2 { font-size: 30px; }
 }
+
+/* Organigrama: tarjetas y fotos más grandes. Las fotos son de medio
+   cuerpo, así que se acercan y se centran en la cara. */
+.avatar { border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--hairline); }
+.avatar-img { object-position: 50% 12%; transform: scale(1.6); transform-origin: 50% 18%; }
+.avatar-fallback { font-size: calc(var(--avatar-size, 44px) * 0.36); }
+.org-card { padding: 22px 24px; min-width: 260px; }
+.org-card-row { gap: 16px; align-items: center; }
+.person-name { font-size: 19px; font-weight: 600; line-height: 1.2; }
+.role-tag { font-size: 12px; margin-bottom: 4px; }
+.person-contact { font-size: 14px; margin-top: 6px; }
+.org-card-meta { font-size: 14px; }
+.org-card-meta-sub { font-size: 13.5px; }
+.org-children-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.org-children-grid-zonales { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.org-card-top { min-width: 380px; }
+.org-locales-inline { font-size: 15px; gap: 6px; }
+.local-link { font-size: 15px; padding: 3px 0; }
+@media (max-width: 720px) {
+  .org-card, .org-card-top { min-width: 0; }
+  .org-children-grid, .org-children-grid-zonales { grid-template-columns: 1fr; }
+}
+/* Las fotos del equipo ya vienen recortadas a la cara: sin zoom */
+.team-card .avatar-img { transform: none; object-position: 50% 30%; }
