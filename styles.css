@@ -1197,7 +1197,7 @@ body.intro-active .section-label {
   padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 10px;
   background: #fff; font: inherit; font-size: 14px;
 }
-.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 18px 0; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 18px 0; }
 .kpi {
   background: #fff; border: 1px solid var(--card-border); border-radius: var(--radius-md);
   padding: 14px; display: flex; flex-direction: column; gap: 2px;
@@ -1210,6 +1210,16 @@ body.intro-active .section-label {
   padding: 18px; margin-bottom: 14px; min-width: 0;
 }
 .panel-card h3 { margin: 0 0 12px; font-size: 16px; }
+.kpi-grid.kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
+.panel-filtros input[type="date"] {
+  padding: 7px 10px; border: 1px solid var(--card-border); border-radius: 10px;
+  background: #fff; font: inherit; font-size: 14px;
+}
+.cita-form { margin: 0; padding: 0; border: none; box-shadow: none; }
+.cita-pegar { margin-top: 14px; font-size: 14px; }
+.cita-pegar summary { cursor: pointer; color: var(--ink-soft); }
+.cita-pegar textarea { width: 100%; margin-top: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+.cita-msg { margin-right: auto; font-size: 13px; color: var(--ink-soft); }
 .exam-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .err-list { display: flex; flex-direction: column; gap: 12px; }
@@ -1232,9 +1242,9 @@ body.intro-active .section-label {
 .banco-err { margin-left: 6px; font-size: 11px; color: #b42318; background: #fef3f2; padding: 1px 6px; border-radius: 4px; }
 
 @media (max-width: 900px) {
-  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .kpi-grid, .kpi-grid.kpi-grid-5 { grid-template-columns: repeat(3, 1fr); }
   .panel-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid, .kpi-grid.kpi-grid-5 { grid-template-columns: repeat(2, 1fr); }
 }

@@ -4,6 +4,8 @@
 //   #/organigrama/:brandId                        -> GTE Comercial + listado de Gerentes Regionales
 //   #/organigrama/:brandId/:regionalId             -> Gerente Regional + su Asistente + Gerentes Zonales y locales
 //   #/organigrama/:brandId/:regionalId/:zonalId/:localSlug -> exámenes de ascenso cargados en ese local
+//   #/examen-online                               -> panel del examen online
+//   #/citaciones                                  -> citados a examen y no asistencias
 //
 // Fotos y logos: ver assets/README.md para la convención de nombres de
 // archivo. Mientras no exista el archivo real, se muestra automáticamente
@@ -964,7 +966,8 @@
 
   // ---------- Acceso al panel del examen online ----------
   function renderAuthBar() {
-    authBarEl.innerHTML = `<a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>`;
+    authBarEl.innerHTML = `<a class="auth-link" href="#/citaciones">${icon("bell", { size: 14 })} Citaciones</a>` +
+      `<a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>`;
   }
 
   // ---------- Panel del examen online (Capacitación) ----------
@@ -990,6 +993,7 @@
       ["Salieron de la pestaña", cuenta((e) => motivoTipo(e.motivoCierre) === "salida")],
       ["Sin tiempo", cuenta((e) => motivoTipo(e.motivoCierre) === "tiempo")],
       ["Cerraron la página", cuenta((e) => motivoTipo(e.motivoCierre) === "abandono")],
+      ["No asistieron", cuenta((e) => motivoTipo(e.motivoCierre) === "ausente")],
     ];
 
     const porNivel = Object.entries(NIVELES_ONLINE).map(([id, nombre]) => {
@@ -1034,7 +1038,7 @@
             <td>${escapeHtml(e.puestoPostula)}</td>
             <td class="num">${e.puntaje === null ? "—" : e.puntaje + "%"}</td>
             <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
-            <td>${escapeHtml({ entregado: "Entregado", tiempo: "Sin tiempo", salida: "Salió de la pestaña", abandono: "Cerró la página" }[motivoTipo(e.motivoCierre)] || "—")}</td>
+            <td>${escapeHtml({ entregado: "Entregado", tiempo: "Sin tiempo", salida: "Salió de la pestaña", abandono: "Cerró la página", ausente: "No asistió" }[motivoTipo(e.motivoCierre)] || "—")}</td>
             <td class="col-actions">${rowActionsHtml(e)}</td>
           </tr>`).join("")
       : `<tr><td colspan="9" class="empty-table">Todavía no hay exámenes online.</td></tr>`;
@@ -1134,6 +1138,222 @@
     }).catch((e) => {
       if (document.body.contains(cont)) cont.innerHTML = `<p class="empty-table">${escapeHtml(e.message)}.</p>`;
     });
+  }
+
+  // ---------- Citaciones a examen (Capacitación) ----------
+  // Se cita a una persona para un día; si a las 20 hs no hizo ningún examen
+  // online ese día, Supabase la marca ausente y genera un Desaprobado.
+  const ESTADOS_CITA = { citado: "Pendiente", presente: "Presente", ausente: "No asistió" };
+  const ESTADO_BADGE = { citado: "pendiente", presente: "aprobado", ausente: "desaprobado" };
+  function isoDia(offset) {
+    return new Date(Date.now() + (offset || 0) * 864e5).toLocaleDateString("en-CA");
+  }
+  const citas = { filas: null, error: null, cargando: false, desde: isoDia(-30), hasta: isoDia(30), marca: "", estado: "", pedida: false };
+
+  function localesDeMarca(brandId) {
+    const brand = getBrand(brandId);
+    if (!brand) return [];
+    const org = OrgOverrides.effectiveOrg(brand);
+    return org.regionales.reduce((acc, r) => acc.concat(localNamesForRegional(r)), [])
+      .sort((a, b) => a.localeCompare(b, "es"));
+  }
+
+  async function cargarCitaciones() {
+    citas.cargando = true;
+    try {
+      citas.filas = await ExamStore.citaciones(citas.desde, citas.hasta);
+      citas.error = null;
+    } catch (e) {
+      citas.error = e.message;
+    }
+    citas.cargando = false;
+    if (window.location.hash === "#/citaciones") renderCitaciones();
+  }
+
+  // Acepta filas pegadas de Excel/Sheets (tab, ; o ,): DNI, Nivel, Nombre, Apellido, Local.
+  function leerPegado(texto) {
+    return texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+      .map((l) => l.split(/\t|;|,/).map((c) => c.trim()))
+      .filter((c) => /\d/.test(c[0] || ""))
+      .map(([dni, nivel, nombre, apellido, local]) => ({ dni, nivel, nombre, apellido, local }));
+  }
+
+  function renderCitaciones() {
+    navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }, { label: "Citaciones" }]);
+    brandPillEl.innerHTML = "";
+
+    const opt = (value, label, sel) => `<option value="${value}"${value === sel ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    const marcaOpts = (sel) => ASCENSOS_DATA.brands.map((b) => opt(b.id, b.name, sel)).join("");
+    const nivelOpts = Object.entries(NIVELES_ONLINE).map(([id, n]) => opt(id, n, "")).join("");
+
+    const filas = (citas.filas || []).filter((c) =>
+      (!citas.marca || c.marca === citas.marca) && (!citas.estado || c.estado === citas.estado));
+    const n = (e) => filas.filter((c) => c.estado === e).length;
+    const cerradas = n("presente") + n("ausente");
+    const kpis = [
+      ["Citados", filas.length],
+      ["Presentes", n("presente")],
+      ["No asistieron", n("ausente")],
+      ["Pendientes", n("citado")],
+      ["% ausentismo", cerradas ? Math.round((n("ausente") / cerradas) * 100) + "%" : "—"],
+    ];
+
+    let cuerpo;
+    if (!citas.filas && !ExamStore.tieneClave() && !citas.pedida) {
+      cuerpo = `<tr><td colspan="9" class="empty-table"><button class="btn-primary" id="verCitas" style="--brand-color:#4a52b8">${icon("lock", { size: 13 })} Ver citaciones (pide la clave de Capacitación)</button></td></tr>`;
+    } else if (!citas.filas && citas.error) {
+      cuerpo = `<tr><td colspan="9" class="empty-table">${escapeHtml(`No se pudo cargar: ${citas.error}.`)} <button class="btn-ghost" id="verCitas">Reintentar</button></td></tr>`;
+    } else if (!citas.filas) {
+      cuerpo = `<tr><td colspan="9" class="empty-table">Cargando citaciones…</td></tr>`;
+    } else if (!filas.length) {
+      cuerpo = `<tr><td colspan="9" class="empty-table">No hay citaciones en este período.</td></tr>`;
+    } else {
+      cuerpo = filas.map((c) => `
+        <tr>
+          <td>${escapeHtml(c.fecha.split("-").reverse().join("/"))}</td>
+          <td>${escapeHtml((getBrand(c.marca) || {}).name || c.marca)}</td>
+          <td>${escapeHtml(c.local || "")}</td>
+          <td>${escapeHtml([c.nombre, c.apellido].filter(Boolean).join(" "))}</td>
+          <td>${escapeHtml(c.dni)}</td>
+          <td>${escapeHtml(NIVELES_ONLINE[c.nivel] || c.nivel)}</td>
+          <td><span class="resultado-badge resultado-${ESTADO_BADGE[c.estado]}">${ESTADOS_CITA[c.estado]}</span></td>
+          <td>${c.condicion ? escapeHtml(`${c.condicion} (${c.porcentaje}%)`) : "—"}</td>
+          <td class="col-actions">${c.estado === "citado" ? `<button class="row-delete cita-quitar" data-id="${c.id}" title="Quitar citación">${icon("trash", { size: 15 })}</button>` : ""}</td>
+        </tr>`).join("");
+    }
+
+    appEl.innerHTML = `
+      <div class="org-header">
+        <div>
+          <h2>Citaciones a examen</h2>
+          <p class="panel-sub">Si a las 20 hs del día citado la persona no hizo ningún examen, queda como <b>No asistió</b> y se registra un <b>Desaprobado</b>.</p>
+        </div>
+      </div>
+
+      <section class="panel-card">
+        <h3>Citar</h3>
+        <form id="citaForm" class="exam-form cita-form">
+          <div class="exam-form-grid">
+            <label>Marca<select name="marca" id="cMarca" required>${marcaOpts(citas.marca || ASCENSOS_DATA.brands[0].id)}</select></label>
+            <label>Fecha del examen<input type="date" name="fecha" value="${isoDia(1)}" required></label>
+            <label>DNI<input type="text" name="dni" inputmode="numeric" maxlength="8" pattern="\\d{7,8}" required></label>
+            <label>Nivel<select name="nivel" required>${nivelOpts}</select></label>
+            <label>Nombre<input type="text" name="nombre" required></label>
+            <label>Apellido<input type="text" name="apellido" required></label>
+            <label>Local<select name="local" id="cLocal" required></select></label>
+          </div>
+          <details class="cita-pegar">
+            <summary>Citar varios a la vez (pegar desde Excel)</summary>
+            <textarea name="lista" rows="5" placeholder="Una persona por fila: DNI · Nivel · Nombre · Apellido · Local&#10;30111222	Entrenador	Ana	Pérez	Boedo"></textarea>
+            <p class="exam-form-hint">Si pegás una lista, se usan la marca y la fecha de arriba y se ignoran los demás campos.</p>
+          </details>
+          <div class="exam-form-actions">
+            <span class="cita-msg" id="citaMsg"></span>
+            <button type="submit" class="btn-primary" style="--brand-color:#1e293b">${icon("plus", { size: 14 })} Citar</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="kpi-grid kpi-grid-5">${kpis.map(([l, v]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+
+      <section class="panel-card">
+        <div class="banco-head">
+          <h3>Citados</h3>
+          <div class="panel-filtros">
+            <input type="date" id="fDesde" value="${citas.desde}" title="Desde">
+            <input type="date" id="fHasta" value="${citas.hasta}" title="Hasta">
+            <select id="fMarca">${opt("", "Todas las marcas", citas.marca)}${marcaOpts(citas.marca)}</select>
+            <select id="fEstado">${opt("", "Todos los estados", citas.estado)}${Object.entries(ESTADOS_CITA).map(([id, l]) => opt(id, l, citas.estado)).join("")}</select>
+            <button type="button" class="btn-ghost" id="citasCsv">Descargar CSV</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table class="exam-table">
+          <thead><tr><th>Fecha</th><th>Marca</th><th>Local</th><th>Nombre y apellido</th><th>DNI</th><th>Nivel</th><th>Asistencia</th><th>Resultado</th><th></th></tr></thead>
+          <tbody>${cuerpo}</tbody>
+        </table></div>
+      </section>
+    `;
+
+    const form = document.getElementById("citaForm");
+    const pintarLocalesCita = () => {
+      document.getElementById("cLocal").innerHTML = `<option value="">Elegí el local</option>` +
+        localesDeMarca(document.getElementById("cMarca").value).map((l) => opt(l, l, "")).join("");
+    };
+    document.getElementById("cMarca").addEventListener("change", pintarLocalesCita);
+    pintarLocalesCita();
+
+    // Con una lista pegada, los campos de una sola persona dejan de ser obligatorios.
+    const lista = form.elements.lista;
+    lista.addEventListener("input", () => {
+      const hayLista = !!lista.value.trim();
+      ["dni", "nivel", "nombre", "apellido", "local"].forEach((k) => { form.elements[k].required = !hayLista; });
+    });
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const msg = document.getElementById("citaMsg");
+      const d = new FormData(form);
+      const personas = lista.value.trim()
+        ? leerPegado(lista.value)
+        : [{ dni: d.get("dni"), nivel: d.get("nivel"), nombre: d.get("nombre"), apellido: d.get("apellido"), local: d.get("local") }];
+      if (!personas.length) { msg.textContent = "No se encontró ninguna fila con DNI."; return; }
+      const btn = form.querySelector("[type=submit]");
+      btn.disabled = true;
+      msg.textContent = "Guardando…";
+      try {
+        const r = await ExamStore.citar(d.get("marca"), d.get("fecha"), personas);
+        const rech = r.rechazados || [];
+        await cargarCitaciones();
+        const m = document.getElementById("citaMsg");
+        if (m) m.textContent = `${r.cargados} citado(s).` + (rech.length ? ` Rechazados (DNI o nivel inválido): ${rech.map((p) => p.dni || "?").join(", ")}.` : "");
+      } catch (e) {
+        msg.textContent = `No se pudo citar: ${e.message}.`;
+        btn.disabled = false;
+      }
+    });
+
+    const verBtn = document.getElementById("verCitas");
+    if (verBtn) verBtn.addEventListener("click", () => { citas.pedida = true; cargarCitaciones(); renderCitaciones(); });
+
+    ["fDesde", "fHasta"].forEach((idSel) => document.getElementById(idSel).addEventListener("change", () => {
+      citas.desde = document.getElementById("fDesde").value;
+      citas.hasta = document.getElementById("fHasta").value;
+      citas.filas = null;
+      cargarCitaciones();
+      renderCitaciones();
+    }));
+    ["fMarca", "fEstado"].forEach((idSel) => document.getElementById(idSel).addEventListener("change", () => {
+      citas.marca = document.getElementById("fMarca").value;
+      citas.estado = document.getElementById("fEstado").value;
+      renderCitaciones();
+    }));
+
+    appEl.querySelectorAll(".cita-quitar").forEach((btn) => btn.addEventListener("click", async () => {
+      if (!confirm("¿Quitar esta citación?")) return;
+      btn.disabled = true;
+      try {
+        await ExamStore.borrarCitacion(Number(btn.dataset.id));
+        await cargarCitaciones();
+      } catch (e) {
+        alert(`No se pudo quitar: ${e.message}.`);
+        btn.disabled = false;
+      }
+    }));
+
+    document.getElementById("citasCsv").addEventListener("click", () => {
+      const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+      const csv = [["fecha", "marca", "local", "nombre", "apellido", "dni", "nivel", "asistencia", "resultado", "porcentaje"].join(";")]
+        .concat(filas.map((c) => [c.fecha, (getBrand(c.marca) || {}).name || c.marca, c.local, c.nombre, c.apellido, c.dni,
+          NIVELES_ONLINE[c.nivel] || c.nivel, ESTADOS_CITA[c.estado], c.condicion, c.porcentaje].map(esc).join(";")))
+        .join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv" }));
+      a.download = `citaciones_${isoDia()}.csv`;
+      a.click();
+    });
+
+    // Primera visita con clave guardada: trae el listado.
+    if (!citas.filas && !citas.cargando && !citas.error && (ExamStore.tieneClave() || citas.pedida)) cargarCitaciones();
   }
 
   // ---------- Formulario de examen: piezas reutilizables ----------
@@ -1348,12 +1568,15 @@
     const localMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)$/);
     const moverMatch = hash.match(/^#\/organigrama\/([^/]+)\/mover$/);
     const onlineMatch = hash === "#/examen-online";
+    const citasMatch = hash === "#/citaciones";
     const regionalMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)$/);
     const brandMatch = hash.match(/^#\/organigrama\/([^/]+)$/);
 
     renderAuthBar();
     if (onlineMatch) {
       renderOnlinePanel();
+    } else if (citasMatch) {
+      renderCitaciones();
     } else if (localMatch) {
       renderLocal(localMatch[1], localMatch[2], localMatch[3], localMatch[4]);
     } else if (moverMatch) {
