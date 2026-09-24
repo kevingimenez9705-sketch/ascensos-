@@ -743,7 +743,7 @@
             <td>${e.puntaje === null || e.puntaje === undefined ? "—" : escapeHtml(e.puntaje)}</td>
             <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
             <td class="col-obs">${e.observaciones ? escapeHtml(e.observaciones) : "—"}</td>
-            <td><button class="row-delete" data-id="${e.id}" title="Eliminar examen">${icon("trash", { size: 15 })}</button></td>
+            <td>${e.origen === "online" ? "" : `<button class="row-delete" data-id="${e.id}" title="Eliminar examen">${icon("trash", { size: 15 })}</button>`}</td>
           </tr>`;
       })
       .join("");
