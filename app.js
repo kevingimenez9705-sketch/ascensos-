@@ -308,7 +308,7 @@
     { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#3949ab", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
     { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#2ea8dc", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
     { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#14577a", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
-    { name: "Evaluaciones", image: "assets/logos/Evaluaciones.jpg", color: "#90a4ae", href: null },
+    { name: "Biblioteca de Capacitaciones", image: "assets/logos/biblioteca.png", color: "#2b4c6f", href: null },
     { name: "Cronograma", image: "assets/logos/Cronograma.png", color: "#4f7cac", href: "https://drive.google.com/drive/folders/1WZSoQy1FUWbYL7t59VOnan_2ojABiwJg?usp=sharing" },
   ];
 
