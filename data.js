@@ -161,7 +161,7 @@ const ASCENSOS_DATA = {
                 role: "GTE Zonal",
                 phone: "11 3361 2557",
                 email: "salome.rodriguez@extremas.com.ar",
-                locales: ["Loma Hermosa", "Hurlingham", "Caseros", "Munro", "José L. Suarez"],
+                locales: ["Loma Hermosa", "Hurlingham", "Caseros", "Munro", "José L. Suarez", "Lezama"],
               },
               {
                 id: "roxana-gorosito",
@@ -454,7 +454,7 @@ const ASCENSOS_DATA = {
                 role: "GTE Zonal",
                 phone: "11 2861-1873",
                 email: "giovanna.solerez@saboresexpress.com.ar",
-                locales: ["Rosario 1", "Rosario 2", "Rosario 3", "San Nicolas"],
+                locales: ["Rosario 1", "Rosario 2", "Rosario 3", "San Nicolas", "Parana", "Cordoba", "Santa Fe Capital"],
               },
             ],
           },
