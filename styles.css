@@ -1511,5 +1511,4 @@ body.intro-active .section-label { color: var(--ink-soft); }
 }
 /* Acceso "Panel de Exámenes" en la pantalla de entrada */
 .quicklink-panel { font: inherit; text-align: left; cursor: pointer; }
-.quicklink-icon-panel { background: var(--blue); color: #fff; border-radius: 16px; }
 body.intro-active main#app { padding-top: 28px; }

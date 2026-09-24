@@ -337,7 +337,7 @@
     // El Panel de Exámenes va como un acceso más (el primero).
     const panelCard = `
       <button type="button" class="quicklink-card quicklink-panel" id="introEnter">
-        <span class="quicklink-icon quicklink-icon-panel">${icon("cap", { size: 30 })}</span>
+        <span class="quicklink-icon"><img src="assets/logos/quick-panel-examenes.svg" alt=""></span>
         <span class="quicklink-name">Panel de Exámenes</span>
       </button>`;
 
