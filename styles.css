@@ -1162,3 +1162,83 @@ body.intro-active .section-label {
   .hero { padding: 28px 24px; }
   .org-children-grid { grid-template-columns: 1fr; }
 }
+
+
+/* ---------- Sesión de Capacitación ---------- */
+.auth-bar { display: flex; gap: 6px; align-items: center; }
+.auth-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--card-border);
+  background: #fff; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+}
+.auth-link:hover { border-color: #c7cbe0; }
+.auth-out { color: var(--ink-soft); font-weight: 500; }
+
+.edit-dialog {
+  border: none; border-radius: var(--radius-lg); padding: 0;
+  width: min(640px, calc(100% - 32px)); box-shadow: var(--shadow);
+}
+.edit-dialog::backdrop { background: rgba(16, 24, 43, 0.45); }
+.edit-dialog .exam-form { margin: 0; border: none; box-shadow: none; }
+.edit-dialog h3 { margin: 0 0 14px; font-size: 18px; }
+.login-dialog { width: min(420px, calc(100% - 32px)); }
+.login-grid { grid-template-columns: 1fr; }
+.login-error { color: #b42318; font-size: 13px; margin: 10px 0 0; }
+
+.col-actions { white-space: nowrap; text-align: right; }
+.row-edit {
+  background: none; border: none; cursor: pointer; color: var(--ink-soft);
+  opacity: 0.6; padding: 4px; border-radius: 6px;
+}
+.row-edit:hover { opacity: 1; color: var(--ink); }
+
+/* ---------- Panel del examen online ---------- */
+.panel-sub { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+.panel-sub a { color: inherit; }
+.panel-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.panel-filtros select {
+  padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 10px;
+  background: #fff; font: inherit; font-size: 14px;
+}
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 18px 0; }
+.kpi {
+  background: #fff; border: 1px solid var(--card-border); border-radius: var(--radius-md);
+  padding: 14px; display: flex; flex-direction: column; gap: 2px;
+}
+.kpi b { font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kpi span { font-size: 12px; color: var(--ink-soft); }
+.panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.panel-card {
+  background: #fff; border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+  padding: 18px; margin-bottom: 14px; min-width: 0;
+}
+.panel-card h3 { margin: 0 0 12px; font-size: 16px; }
+.exam-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.err-list { display: flex; flex-direction: column; gap: 12px; }
+.err-bar { display: grid; grid-template-columns: 1fr 44px; gap: 3px 10px; align-items: center; }
+.err-text { grid-column: 1 / -1; font-size: 13px; }
+.err-meta { grid-column: 1 / -1; font-size: 11px; color: var(--ink-soft); }
+.err-track { height: 8px; background: #eef0f6; border-radius: 4px; overflow: hidden; }
+.err-fill { display: block; height: 100%; background: #d64545; border-radius: 0 4px 4px 0; }
+.err-pct { font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.banco-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.banco-head h3 { margin: 0; }
+.banco-lista { display: flex; flex-direction: column; }
+.banco-item { padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+.banco-item:last-child { border-bottom: none; }
+.banco-item p { margin: 0 0 6px; font-size: 14px; }
+.banco-item ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); }
+.banco-item li.ok { color: #067647; font-weight: 600; }
+.banco-item li.ok::after { content: "  ✓"; }
+.banco-err { margin-left: 6px; font-size: 11px; color: #b42318; background: #fef3f2; padding: 1px 6px; border-radius: 4px; }
+
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .panel-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
