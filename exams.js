@@ -30,6 +30,7 @@ const MOTIVOS_ONLINE = {
   tiempo: "tiempo agotado",
   abandono: "cerró la página",
   salida: "cerrado por salir de la ventana",
+  ausente: "no asistió",
 };
 
 const ExamStore = (function () {
@@ -122,7 +123,8 @@ const ExamStore = (function () {
       puestoActual: "",
       puestoPostula: NIVELES_ONLINE[r.nivel] || r.nivel,
       fecha: fechaLocal(r.creado),
-      asistio: true,
+      // Citado que no rindió ningún examen ese día (lo genera Supabase a las 20 hs).
+      asistio: motivoCierre !== "ausente",
       puntaje: typeof r.porcentaje === "number" ? r.porcentaje : null,
       resultado: r.condicion === "Aprobado" ? "aprobado" : "desaprobado",
       observaciones: "Examen online" + (motivo ? ` (${motivo})` : ""),
@@ -146,7 +148,7 @@ const ExamStore = (function () {
     let clave = null;
     try { clave = localStorage.getItem(CLAVE_KEY); } catch (e) { /* sin almacenamiento */ }
     if (!clave || incorrecta) {
-      clave = prompt(incorrecta ? "Clave incorrecta. Ingresá la clave de Capacitación:" : "Clave de Capacitación (para corregir o borrar):");
+      clave = prompt(incorrecta ? "Clave incorrecta. Ingresá la clave de Capacitación:" : "Clave de Capacitación:");
       if (!clave) throw new Error("se canceló");
       try { localStorage.setItem(CLAVE_KEY, clave); } catch (e) { /* sin almacenamiento */ }
     }
@@ -380,12 +382,33 @@ const ExamStore = (function () {
     return !!claveGuardada();
   }
 
+  // ---------- Citaciones a examen (Supabase) ----------
+  // Si a las 20 hs del día citado la persona no hizo ningún examen, Supabase
+  // la marca ausente y genera un Desaprobado (motivo_cierre = "ausente").
+  async function citaciones(desde, hasta) {
+    const res = await rpcConClave("citaciones_listado", { p_desde: desde || null, p_hasta: hasta || null });
+    return (await res.json()) || [];
+  }
+
+  // personas: [{ dni, nivel, nombre, apellido, local }]
+  async function citar(marca, fecha, personas) {
+    const res = await rpcConClave("citar_personas", { p_marca: marca, p_fecha: fecha, p_personas: personas });
+    return res.json();
+  }
+
+  async function borrarCitacion(id) {
+    await rpcConClave("borrar_citacion", { p_id: id });
+  }
+
   return {
     ensureLoaded,
     update,
     all,
     bancoPreguntas,
     tieneClave,
+    citaciones,
+    citar,
+    borrarCitacion,
     retry,
     isLoaded,
     getError,
