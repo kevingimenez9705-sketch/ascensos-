@@ -69,16 +69,31 @@ const ExamStore = (function () {
   // POST con Content-Type text/plain a propósito: evita el preflight CORS
   // que Apps Script no responde. El body sigue siendo JSON; Code.gs lo
   // parsea igual.
-  async function post(action, extra) {
-    const res = await fetch(SHEET_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign({ action }, extra)),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "la planilla devolvió un error");
-    return data;
+  // Toda escritura en la planilla lleva la clave de Capacitación (Code.gs la valida).
+  // silent: usa solo la clave guardada, sin pedirla (para la sincronización automática).
+  async function post(action, extra, opts) {
+    const send = async (clave) => {
+      const res = await fetch(SHEET_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(Object.assign({ action, clave }, extra)),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "la planilla devolvió un error");
+      return data;
+    };
+    if (opts && opts.silent) {
+      const guardada = claveGuardada();
+      if (!guardada) throw new Error("sin clave");
+      return send(guardada);
+    }
+    try {
+      return await send(claveCapacitacion(false));
+    } catch (err) {
+      if (!/clave incorrecta/i.test(err.message)) throw err;
+      return send(claveCapacitacion(true));
+    }
   }
 
   async function fetchSheet() {
@@ -123,6 +138,10 @@ const ExamStore = (function () {
   // vez y queda guardada en este navegador. La clave real vive solo en
   // Supabase (tabla capacitacion_clave), nunca en el código.
   const CLAVE_KEY = "campusAscensos.clave.v1";
+  function claveGuardada() {
+    try { return localStorage.getItem(CLAVE_KEY); } catch (e) { return null; }
+  }
+
   function claveCapacitacion(incorrecta) {
     let clave = null;
     try { clave = localStorage.getItem(CLAVE_KEY); } catch (e) { /* sin almacenamiento */ }
@@ -186,12 +205,12 @@ const ExamStore = (function () {
   // seguro llamarla en cada carga: si ya está todo subido, no hace nada.
   async function migratePending(remoteExams) {
     const local = loadBackup().filter((e) => e.origen !== "online");
-    if (!local.length) return;
+    if (!local.length || !claveGuardada()) return;
     const remoteIds = new Set(remoteExams.map((e) => e.id));
     const missing = local.filter((e) => e.id && !remoteIds.has(e.id));
     for (const record of missing) {
       try {
-        await post("add", { record });
+        await post("add", { record }, { silent: true });
         remoteExams.push(withLocalKey(record));
       } catch (e) {
         // si falla uno, seguimos con los demás; se reintenta en la próxima carga
@@ -342,10 +361,31 @@ const ExamStore = (function () {
     return exams.slice();
   }
 
+  // Banco de preguntas con respuestas (solo con la clave de Capacitación).
+  // Devuelve { marca: { nivel: [preguntas] } }.
+  let banco = null;
+  async function bancoPreguntas() {
+    if (banco) return banco;
+    const res = await rpcConClave("banco_preguntas", {});
+    const lista = (await res.json()) || [];
+    banco = {};
+    lista.forEach((p) => {
+      banco[p.marca] = banco[p.marca] || {};
+      (banco[p.marca][p.nivel] = banco[p.marca][p.nivel] || []).push(p);
+    });
+    return banco;
+  }
+
+  function tieneClave() {
+    return !!claveGuardada();
+  }
+
   return {
     ensureLoaded,
     update,
     all,
+    bancoPreguntas,
+    tieneClave,
     retry,
     isLoaded,
     getError,

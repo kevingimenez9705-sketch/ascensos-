@@ -18,6 +18,11 @@
  *  7. Copiá la URL que te da ("URL de la aplicación web", termina en /exec)
  *     y pasámela — con eso conecto la app.
  *
+ * SEGURIDAD: para agregar, corregir o borrar exámenes se pide la clave de
+ * Capacitación. Cargala en Configuración del proyecto (engranaje) >
+ * Propiedades de la secuencia de comandos > Agregar propiedad:
+ *   Propiedad: CLAVE   Valor: (la misma clave de Capacitación de Supabase)
+ *
  * Si más adelante cambiás el código de este script, hay que volver a
  * "Implementar > Gestionar implementaciones > editar (lápiz) > Nueva
  * versión" para que el cambio se vea reflejado (si no, la URL sigue
@@ -90,6 +95,13 @@ function doPost(e) {
     body = JSON.parse(e.postData.contents);
   } catch (err) {
     return jsonResponse_({ ok: false, error: "JSON inválido" });
+  }
+
+  // Toda escritura requiere la clave de Capacitación, guardada en
+  // Configuración del proyecto > Propiedades de la secuencia de comandos > CLAVE.
+  var claveEsperada = PropertiesService.getScriptProperties().getProperty("CLAVE");
+  if (!claveEsperada || String(body.clave || "") !== claveEsperada) {
+    return jsonResponse_({ ok: false, error: "clave incorrecta" });
   }
 
   if (body.action === "add") {
