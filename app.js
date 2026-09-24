@@ -13,7 +13,7 @@
   const appEl = document.getElementById("app");
   const brandPillEl = document.getElementById("brandPill");
   const authBarEl = document.getElementById("authBar");
-  // Examen online (repo Examenes-Emi): de ahí se carga el banco de preguntas.
+  // Examen online (repo Examenes-Emi).
   const EXAMEN_URL = "https://examenes-emi.vercel.app/";
   const navCrumbEl = document.getElementById("navCrumb");
   const syncPillEl = document.getElementById("syncPill");
@@ -968,21 +968,6 @@
   }
 
   // ---------- Panel del examen online (Capacitación) ----------
-  let bancosPromise = null;
-  function cargarBancos() {
-    if (window.BANCOS) return Promise.resolve(window.BANCOS);
-    if (!bancosPromise) {
-      bancosPromise = new Promise((resolve, reject) => {
-        const sc = document.createElement("script");
-        sc.src = `${EXAMEN_URL}preguntas.js`;
-        sc.onload = () => (window.BANCOS ? resolve(window.BANCOS) : reject(new Error("sin preguntas")));
-        sc.onerror = () => { bancosPromise = null; reject(new Error("no se pudo cargar el banco de preguntas")); };
-        document.head.appendChild(sc);
-      });
-    }
-    return bancosPromise;
-  }
-
   const panelFiltro = { marca: "", nivel: "", bancoMarca: "sabores", bancoNivel: "entrenador" };
 
   function motivoTipo(m) {
@@ -1125,7 +1110,13 @@
   // Lista de preguntas de una marca/nivel con la respuesta correcta y su % de error.
   function pintarBanco(porPregunta) {
     const cont = document.getElementById("bancoLista");
-    cargarBancos().then((bancos) => {
+    if (!ExamStore.tieneClave() && !pintarBanco.pedida) {
+      cont.innerHTML = `<button class="btn-primary" id="verBanco" style="--brand-color:#4a52b8">${icon("lock", { size: 13 })} Ver preguntas (pide la clave de Capacitación)</button>`;
+      document.getElementById("verBanco").addEventListener("click", () => { pintarBanco.pedida = true; pintarBanco(porPregunta); });
+      return;
+    }
+    cont.innerHTML = `<p class="empty-table">Cargando preguntas…</p>`;
+    ExamStore.bancoPreguntas().then((bancos) => {
       if (!document.body.contains(cont)) return;
       const preguntas = ((bancos[panelFiltro.bancoMarca] || {})[panelFiltro.bancoNivel]) || [];
       if (!preguntas.length) {
