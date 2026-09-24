@@ -22,8 +22,8 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwWQud8u_W8V3jH3W
 // Resultados del examen online (Examenes-Emi), guardados en Supabase.
 // Se muestran junto a los cargados a mano en la planilla; son de solo
 // lectura (no se pueden eliminar desde acá). null = no se consultan.
-const SUPABASE_URL = null;       // p.ej. "https://xxxx.supabase.co"
-const SUPABASE_ANON_KEY = null;
+const SUPABASE_URL = "https://lyvjunfgobisrfdccrnq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5dmp1bmZnb2Jpc3JmZGNjcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTc5MTYsImV4cCI6MjEwNTgzMzkxNn0.-glFu4WVy_1c2-gBgu85Q31gwPZzxZmOlKAh6W1KZ-k";
 
 const NIVELES_ONLINE = { entrenador: "Entrenador", encargado: "Encargado", gerente: "Gerente" };
 const MOTIVOS_ONLINE = {
