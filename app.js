@@ -334,6 +334,13 @@
         : `<div class="quicklink-card quicklink-card-disabled" style="--link-color:${link.color}" title="Próximamente">${inner}</div>`;
     }).join("");
 
+    // El Panel de Exámenes va como un acceso más (el primero).
+    const panelCard = `
+      <button type="button" class="quicklink-card quicklink-panel" id="introEnter">
+        <span class="quicklink-icon quicklink-icon-panel">${icon("cap", { size: 30 })}</span>
+        <span class="quicklink-name">Panel de Exámenes</span>
+      </button>`;
+
     const cards = TEAM.map((person) => {
       const photo = person.link
         ? `<a class="avatar-link" href="${escapeHtml(person.link)}" target="_blank" rel="noopener noreferrer"
@@ -349,22 +356,8 @@
     }).join("");
 
     appEl.innerHTML = `
-      <section class="intro-hero">
-        <div class="intro-hero-left">
-          <span class="intro-hero-icon">${icon("cap", { size: 22 })}</span>
-          <div>
-            <p class="intro-hero-label">SISTEMA DE ASCENSOS</p>
-            <h1>Panel de <span class="highlight">Exámenes</span></h1>
-            <p class="intro-hero-sub">Acceso rápido al organigrama, los locales y los exámenes de ascenso.</p>
-          </div>
-        </div>
-        <button class="btn-primary intro-hero-btn" id="introEnter" style="--brand-color:#4a52b8">
-          Ir al Panel de Exámenes ${icon("arrowRight", { size: 14 })}
-        </button>
-      </section>
-
       <p class="section-label">ACCESOS RÁPIDOS</p>
-      <div class="quicklinks-grid">${quickLinks}</div>
+      <div class="quicklinks-grid">${panelCard}${quickLinks}</div>
 
       <p class="section-label">NUESTRO EQUIPO</p>
       <div class="team-grid">${cards}</div>
