@@ -137,7 +137,7 @@
     opts = opts || {};
     const tag = opts.tag || "div";
     const extraClass = opts.extraClass || "";
-    const size = opts.size || 44;
+    const size = opts.size || 68;
     const attrs = opts.attrs || "";
     const metaLines = opts.meta ? (Array.isArray(opts.meta) ? opts.meta : [opts.meta]) : [];
     const metaHtml = metaLines
@@ -245,9 +245,9 @@
   // una línea horizontal. Se usa tanto para GTE Comercial + su par como
   // para GTE Regional + su Asistente de Operaciones.
   function renderPairRow(main, partner, brandId, brandColor) {
-    const mainCard = personCard(main, brandId, { extraClass: "org-card-top", brandColor, size: 52 });
+    const mainCard = personCard(main, brandId, { extraClass: "org-card-top", brandColor, size: 84 });
     const partnerHtml = partner
-      ? `<div class="org-connector org-connector-h"></div>${personCard(partner, brandId, { extraClass: "org-card-top org-card-secondary", brandColor, size: 44 })}`
+      ? `<div class="org-connector org-connector-h"></div>${personCard(partner, brandId, { extraClass: "org-card-top org-card-secondary", brandColor, size: 72 })}`
       : "";
 
     return `<div class="org-pair-row">${mainCard}${partnerHtml}</div>`;
@@ -330,8 +330,8 @@
     const cards = TEAM.map((person) => {
       const photo = person.link
         ? `<a class="avatar-link" href="${escapeHtml(person.link)}" target="_blank" rel="noopener noreferrer"
-              title="Ir al examen de ${escapeHtml(person.name)}">${avatar(person, "equipo", 64).trim()}</a>`
-        : avatar(person, "equipo", 64);
+              title="Ir al examen de ${escapeHtml(person.name)}">${avatar(person, "equipo", 104).trim()}</a>`
+        : avatar(person, "equipo", 104);
       return `
         <div class="team-card" style="--team-color:${person.color}">
           ${photo}
@@ -668,7 +668,7 @@
         return personCard(zonal, brand.id, {
           extraClass: "org-zonal-card",
           brandColor: brand.color,
-          size: 38,
+          size: 68,
           meta: statsMetaLine(zonalStats),
           extra: `<ul class="org-locales-inline">${locales}</ul>`,
         });
