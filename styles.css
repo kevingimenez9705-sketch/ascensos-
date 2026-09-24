@@ -93,7 +93,13 @@ main#app.fade-in { animation: fadeInUp 0.22s ease; }
 .sync-pill-ok {
   background: #e3f7e8;
   color: #1a7f3c;
+  cursor: pointer;
 }
+.sync-pill-ok:hover { filter: brightness(0.96); }
+.sync-pill-busy { background: #eceef3; color: var(--ink-soft); cursor: progress; }
+.sync-pill .spin { animation: sync-spin 0.9s linear infinite; }
+@keyframes sync-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sync-pill .spin { animation: none; } }
 .sync-pill-error {
   background: #fff2d9;
   color: #8a5a00;
