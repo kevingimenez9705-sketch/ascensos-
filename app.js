@@ -304,12 +304,12 @@
   ];
 
   const QUICK_LINKS = [
-    { name: "Icheck", image: "assets/logos/icheck.jpg", color: "#1b998a", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
-    { name: "Bloques A2", image: "assets/logos/bloques A2.avif", color: "#3949ab", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
-    { name: "Organigramas", image: "assets/logos/organigrama.avif", color: "#2ea8dc", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
-    { name: "Manuales", image: "assets/logos/manuales.jpg", color: "#14577a", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
-    { name: "Biblioteca de Capacitaciones", image: "assets/logos/biblioteca.png", color: "#2b4c6f", href: null },
-    { name: "Cronograma", image: "assets/logos/Cronograma.png", color: "#4f7cac", href: "https://drive.google.com/drive/folders/1WZSoQy1FUWbYL7t59VOnan_2ojABiwJg?usp=sharing" },
+    { name: "Icheck", image: "assets/logos/quick-icheck.png", color: "#1b998a", href: "https://drive.google.com/drive/u/3/folders/1Qntxhq59U6ELX6T8nWSEWiKqLQQwVWns" },
+    { name: "Bloques A2", image: "assets/logos/quick-bloques.png", color: "#3949ab", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
+    { name: "Organigramas", image: "assets/logos/quick-organigramas.png", color: "#2ea8dc", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
+    { name: "Manuales", image: "assets/logos/quick-manuales.png", color: "#14577a", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    { name: "Biblioteca de Capacitaciones", image: "assets/logos/quick-biblioteca.png", color: "#2b4c6f", href: null },
+    { name: "Cronograma", image: "assets/logos/quick-cronograma.png", color: "#4f7cac", href: "https://drive.google.com/drive/folders/1WZSoQy1FUWbYL7t59VOnan_2ojABiwJg?usp=sharing" },
   ];
 
   function renderIntro(onEnter) {
