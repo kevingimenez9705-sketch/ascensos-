@@ -78,9 +78,10 @@ function doGet(e) {
   return jsonResponse_({ ok: true, exams: exams });
 }
 
-// POST: agregar o eliminar un examen. Body (texto plano con JSON adentro,
+// POST: agregar, corregir o eliminar un examen. Body (texto plano con JSON adentro,
 // para evitar el preflight CORS que Apps Script no responde):
 //   {"action":"add","record":{...}}
+//   {"action":"update","record":{...con id...}}
 //   {"action":"remove","id":"..."}
 function doPost(e) {
   var sheet = getSheet_();
@@ -99,6 +100,24 @@ function doPost(e) {
     });
     sheet.appendRow(row);
     return jsonResponse_({ ok: true, record: record });
+  }
+
+  if (body.action === "update") {
+    var rec = body.record || {};
+    var rows = sheet.getDataRange().getValues();
+    var idIdx = HEADERS.indexOf("id");
+    for (var r = 1; r < rows.length; r++) {
+      if (String(rows[r][idIdx]) === String(rec.id)) {
+        var updated = HEADERS.map(function (h, i) {
+          var value = rec[h];
+          if (value === undefined) return rows[r][i];
+          return value === null ? "" : value;
+        });
+        sheet.getRange(r + 1, 1, 1, HEADERS.length).setValues([updated]);
+        return jsonResponse_({ ok: true, record: rec });
+      }
+    }
+    return jsonResponse_({ ok: false, error: "no se encontró el examen" });
   }
 
   if (body.action === "remove") {

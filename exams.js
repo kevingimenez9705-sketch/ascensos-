@@ -95,7 +95,8 @@ const ExamStore = (function () {
 
   // Convierte un resultado del examen online al mismo formato que los de la planilla.
   function onlineToRecord(r) {
-    const motivo = MOTIVOS_ONLINE[String(r.motivo_cierre || "").split(":")[0]];
+    const motivoCierre = r.motivo_cierre || (r.payload && r.payload.motivo_cierre) || "";
+    const motivo = MOTIVOS_ONLINE[String(motivoCierre).split(":")[0]];
     return withLocalKey({
       id: `online-${r.id}`,
       origen: "online",
@@ -111,11 +112,38 @@ const ExamStore = (function () {
       resultado: r.condicion === "Aprobado" ? "aprobado" : "desaprobado",
       observaciones: "Examen online" + (motivo ? ` (${motivo})` : ""),
       createdAt: r.creado,
+      // Datos crudos del examen online (para el panel de Capacitación).
+      nivel: r.nivel,
+      motivoCierre,
+      detalle: r.payload && Array.isArray(r.payload.detalle) ? r.payload.detalle : null,
     });
+  }
+
+  // Llamada a la tabla de resultados con la sesión de Capacitación.
+  async function restOnline(method, query, body) {
+    const token = await Auth.token();
+    if (!token) throw new Error("tenés que ingresar con tu usuario de Capacitación");
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/examen_resultados${query}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+        Prefer: "return=minimal",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
+    return res;
   }
 
   async function fetchOnline() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
+    // Con sesión de Capacitación se trae el detalle completo (respuestas incluidas).
+    if (typeof Auth !== "undefined" && Auth.isLoggedIn() && (await Auth.token())) {
+      const res = await restOnline("GET", "?select=id,marca,local,nombre,apellido,nivel,porcentaje,condicion,payload,creado&order=creado.desc");
+      return (await res.json()).map(onlineToRecord);
+    }
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/examenes_campus`, {
       method: "POST",
       headers: {
@@ -261,14 +289,52 @@ const ExamStore = (function () {
   }
 
   async function remove(id) {
-    if (String(id).startsWith("online-")) throw new Error("los resultados del examen online no se eliminan desde el Campus");
+    if (String(id).startsWith("online-")) {
+      await restOnline("DELETE", `?id=eq.${encodeURIComponent(String(id).slice(7))}`);
+      exams = exams.filter((e) => e.id !== id);
+      saveBackup(exams);
+      return;
+    }
     await post("remove", { id });
     exams = exams.filter((e) => e.id !== id);
     saveBackup(exams);
   }
 
+  // Corrige un examen. changes usa el mismo formato de registro que add().
+  // En los del examen online solo se guardan nombre, apellido, local,
+  // nivel (puestoPostula), puntaje y resultado.
+  async function update(id, changes) {
+    const current = exams.find((e) => e.id === id);
+    if (!current) throw new Error("no se encontró el examen");
+    const next = Object.assign({}, current, changes);
+    if (current.origen === "online") {
+      const nivel = Object.keys(NIVELES_ONLINE).find((k) => NIVELES_ONLINE[k] === next.puestoPostula) || current.nivel;
+      await restOnline("PATCH", `?id=eq.${encodeURIComponent(String(id).slice(7))}`, {
+        nombre: next.nombre,
+        apellido: next.apellido,
+        local: next.localName,
+        nivel,
+        porcentaje: next.puntaje,
+        condicion: next.resultado === "aprobado" ? "Aprobado" : "Desaprobado",
+      });
+      Object.assign(next, { nivel, puestoPostula: NIVELES_ONLINE[nivel] });
+    } else {
+      const { localKey: _k, ...record } = next;
+      await post("update", { record });
+    }
+    exams = exams.map((e) => (e.id === id ? withLocalKey(next) : e));
+    saveBackup(exams);
+    return next;
+  }
+
+  function all() {
+    return exams.slice();
+  }
+
   return {
     ensureLoaded,
+    update,
+    all,
     retry,
     isLoaded,
     getError,

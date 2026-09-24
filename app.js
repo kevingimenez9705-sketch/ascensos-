@@ -12,6 +12,9 @@
 (function () {
   const appEl = document.getElementById("app");
   const brandPillEl = document.getElementById("brandPill");
+  const authBarEl = document.getElementById("authBar");
+  // Examen online (repo Examenes-Emi): de ahí se carga el banco de preguntas.
+  const EXAMEN_URL = "https://examenes-emi.vercel.app/";
   const navCrumbEl = document.getElementById("navCrumb");
   const syncPillEl = document.getElementById("syncPill");
   let syncOkTimeout = null;
@@ -744,7 +747,7 @@
             <td>${e.puntaje === null || e.puntaje === undefined ? "—" : escapeHtml(e.puntaje)}</td>
             <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
             <td class="col-obs">${e.observaciones ? escapeHtml(e.observaciones) : "—"}</td>
-            <td>${e.origen === "online" ? "" : `<button class="row-delete" data-id="${e.id}" title="Eliminar examen">${icon("trash", { size: 15 })}</button>`}</td>
+            <td class="col-actions">${rowActionsHtml(e)}</td>
           </tr>`;
       })
       .join("");
@@ -835,21 +838,378 @@
       }
     });
 
-    appEl.querySelectorAll(".row-delete").forEach((btn) => {
+    wireRowActions(appEl);
+  }
+
+  // ---------- Acciones por examen (solo con sesión de Capacitación) ----------
+  function rowActionsHtml(e) {
+    if (!Auth.isLoggedIn()) return "";
+    return `
+      <button class="row-edit" data-id="${escapeHtml(e.id)}" title="Corregir examen">${icon("edit", { size: 15 })}</button>
+      <button class="row-delete" data-id="${escapeHtml(e.id)}" title="Eliminar examen">${icon("trash", { size: 15 })}</button>`;
+  }
+
+  function wireRowActions(root) {
+    root.querySelectorAll(".row-delete").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (confirm("¿Eliminar este examen?")) {
-          btn.disabled = true;
-          try {
-            await ExamStore.remove(btn.dataset.id);
-            updateSyncPill();
-            route();
-          } catch (err) {
-            updateSyncPill();
-            alert(`No se pudo eliminar: ${err.message}. Probá de nuevo en un momento.`);
-            btn.disabled = false;
-          }
+        if (!confirm("¿Eliminar este examen? No se puede deshacer.")) return;
+        btn.disabled = true;
+        try {
+          await ExamStore.remove(btn.dataset.id);
+          updateSyncPill();
+          route();
+        } catch (err) {
+          alert(`No se pudo eliminar: ${err.message}.`);
+          btn.disabled = false;
         }
       });
+    });
+    root.querySelectorAll(".row-edit").forEach((btn) => {
+      btn.addEventListener("click", () => openEditDialog(btn.dataset.id));
+    });
+  }
+
+  // Diálogo para corregir un examen (planilla u online).
+  function openEditDialog(id) {
+    const exam = ExamStore.all().find((e) => e.id === id);
+    if (!exam) return;
+    const online = exam.origen === "online";
+    const brand = getBrand(exam.brandId);
+    const locales = brand ? OrgOverrides.effectiveOrg(brand).regionales.flatMap((r) => r.zonales.flatMap((z) => z.locales)) : [];
+    if (exam.localName && !locales.includes(exam.localName)) locales.push(exam.localName);
+
+    const dlg = document.createElement("dialog");
+    dlg.className = "edit-dialog";
+    dlg.innerHTML = `
+      <form method="dialog" class="exam-form">
+        <h3>Corregir examen${online ? " online" : ""}</h3>
+        <div class="exam-form-grid">
+          <label>Nombre <input type="text" name="nombre" required></label>
+          <label>Apellido <input type="text" name="apellido"></label>
+          <label>Local
+            <select name="localName">${locales.sort((a, b) => a.localeCompare(b, "es")).map((l) => `<option>${escapeHtml(l)}</option>`).join("")}</select>
+          </label>
+          ${online
+            ? `<label>Nivel
+                 <select name="puestoPostula">${Object.values(NIVELES_ONLINE).map((n) => `<option>${n}</option>`).join("")}</select>
+               </label>`
+            : `<label>Puesto actual <input type="text" name="puestoActual"></label>
+               <label>Puesto al que postula <input type="text" name="puestoPostula"></label>
+               <label>Fecha del examen <input type="date" name="fecha"></label>
+               <label>¿Asistió?
+                 <select name="asistio"><option value="si">Sí</option><option value="no">No</option></select>
+               </label>`}
+          <label>Puntaje (0-100) <input type="number" name="puntaje" min="0" max="100" step="1"></label>
+          <label>Resultado
+            <select name="resultado">
+              ${online ? "" : `<option value="pendiente">Pendiente de revisión</option>`}
+              <option value="aprobado">Aprobado</option>
+              <option value="desaprobado">Desaprobado</option>
+              ${online ? "" : `<option value="no-asistio">No asistió</option>`}
+            </select>
+          </label>
+          ${online ? "" : `<label class="exam-form-full">Observaciones <textarea name="observaciones" rows="2"></textarea></label>`}
+        </div>
+        ${online ? `<p class="exam-form-hint">Si pasás un examen online a Aprobado, la persona queda habilitada para rendir el nivel siguiente.</p>` : ""}
+        <div class="exam-form-actions">
+          <button type="button" class="btn-ghost" data-cancel>Cancelar</button>
+          <button type="submit" class="btn-primary" style="--brand-color:${brand ? brand.color : "#1e293b"}">Guardar cambios</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+    const form = dlg.querySelector("form");
+    const set = (name, value) => { const el = form.elements[name]; if (el && value !== undefined && value !== null) el.value = value; };
+    set("nombre", exam.nombre); set("apellido", exam.apellido); set("localName", exam.localName);
+    set("puestoActual", exam.puestoActual); set("puestoPostula", exam.puestoPostula); set("fecha", exam.fecha);
+    set("asistio", exam.asistio ? "si" : "no"); set("puntaje", exam.puntaje); set("resultado", exam.resultado);
+    set("observaciones", exam.observaciones);
+
+    dlg.querySelector("[data-cancel]").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => dlg.remove());
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const data = new FormData(form);
+      const puntajeRaw = data.get("puntaje");
+      const changes = {
+        nombre: String(data.get("nombre") || "").trim(),
+        apellido: String(data.get("apellido") || "").trim(),
+        localName: data.get("localName"),
+        puestoPostula: String(data.get("puestoPostula") || "").trim(),
+        puntaje: puntajeRaw === "" || puntajeRaw === null ? null : Number(puntajeRaw),
+        resultado: data.get("resultado"),
+      };
+      if (!online) {
+        Object.assign(changes, {
+          puestoActual: String(data.get("puestoActual") || "").trim(),
+          fecha: data.get("fecha"),
+          asistio: data.get("asistio") === "si",
+          observaciones: String(data.get("observaciones") || "").trim(),
+        });
+      }
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = "Guardando…";
+      try {
+        await ExamStore.update(id, changes);
+        dlg.close();
+        route();
+      } catch (err) {
+        alert(`No se pudo guardar: ${err.message}.`);
+        btn.disabled = false;
+        btn.textContent = "Guardar cambios";
+      }
+    });
+    dlg.showModal();
+  }
+
+  // ---------- Sesión de Capacitación ----------
+  function renderAuthBar() {
+    if (Auth.isLoggedIn()) {
+      authBarEl.innerHTML = `
+        <a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>
+        <button class="auth-link auth-out" id="logoutBtn" title="${escapeHtml(Auth.email() || "")}">Salir</button>`;
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        Auth.logout();
+        renderAuthBar();
+        await ExamStore.retry();
+        route();
+      });
+    } else {
+      authBarEl.innerHTML = `<button class="auth-link" id="loginBtn">${icon("lock", { size: 13 })} Ingresar</button>`;
+      document.getElementById("loginBtn").addEventListener("click", () => openLoginDialog());
+    }
+  }
+
+  function openLoginDialog(onDone) {
+    const dlg = document.createElement("dialog");
+    dlg.className = "edit-dialog login-dialog";
+    dlg.innerHTML = `
+      <form class="exam-form">
+        <h3>Acceso Capacitación</h3>
+        <p class="exam-form-hint">Para corregir y borrar exámenes y ver el panel del examen online.</p>
+        <div class="exam-form-grid login-grid">
+          <label class="exam-form-full">Email <input type="email" name="email" required autocomplete="username"></label>
+          <label class="exam-form-full">Contraseña <input type="password" name="password" required autocomplete="current-password"></label>
+        </div>
+        <p class="login-error" hidden></p>
+        <div class="exam-form-actions">
+          <button type="button" class="btn-ghost" data-cancel>Cancelar</button>
+          <button type="submit" class="btn-primary" style="--brand-color:#4a52b8">Ingresar</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+    const form = dlg.querySelector("form");
+    const errEl = dlg.querySelector(".login-error");
+    dlg.querySelector("[data-cancel]").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => dlg.remove());
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      errEl.hidden = true;
+      try {
+        await Auth.login(form.elements.email.value.trim(), form.elements.password.value);
+        dlg.close();
+        renderAuthBar();
+        await ExamStore.retry();
+        updateSyncPill();
+        if (onDone) onDone();
+        else route();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+        btn.disabled = false;
+      }
+    });
+    dlg.showModal();
+    form.elements.email.focus();
+  }
+
+  // ---------- Panel del examen online (Capacitación) ----------
+  let bancosPromise = null;
+  function cargarBancos() {
+    if (window.BANCOS) return Promise.resolve(window.BANCOS);
+    if (!bancosPromise) {
+      bancosPromise = new Promise((resolve, reject) => {
+        const sc = document.createElement("script");
+        sc.src = `${EXAMEN_URL}preguntas.js`;
+        sc.onload = () => (window.BANCOS ? resolve(window.BANCOS) : reject(new Error("sin preguntas")));
+        sc.onerror = () => { bancosPromise = null; reject(new Error("no se pudo cargar el banco de preguntas")); };
+        document.head.appendChild(sc);
+      });
+    }
+    return bancosPromise;
+  }
+
+  const panelFiltro = { marca: "", nivel: "", bancoMarca: "sabores", bancoNivel: "entrenador" };
+
+  function motivoTipo(m) {
+    return String(m || "").split(":")[0];
+  }
+
+  function renderOnlinePanel() {
+    navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }, { label: "Examen online" }]);
+    brandPillEl.innerHTML = "";
+
+    if (!Auth.isLoggedIn()) {
+      appEl.innerHTML = `
+        <div class="empty-state">
+          ${icon("lock", { size: 18 })} Este panel es solo para Capacitación.<br><br>
+          <button class="btn-primary" id="panelLogin" style="--brand-color:#4a52b8">Ingresar</button>
+        </div>`;
+      document.getElementById("panelLogin").addEventListener("click", () => openLoginDialog());
+      return;
+    }
+
+    const todos = ExamStore.all().filter((e) => e.origen === "online");
+    const lista = todos.filter((e) =>
+      (!panelFiltro.marca || e.brandId === panelFiltro.marca) && (!panelFiltro.nivel || e.nivel === panelFiltro.nivel));
+    const cuenta = (fn) => lista.filter(fn).length;
+    const aprob = cuenta((e) => e.resultado === "aprobado");
+    const kpis = [
+      ["Intentos", lista.length],
+      ["Aprobados", aprob],
+      ["Desaprobados", lista.length - aprob],
+      ["Salieron de la pestaña", cuenta((e) => motivoTipo(e.motivoCierre) === "salida")],
+      ["Sin tiempo", cuenta((e) => motivoTipo(e.motivoCierre) === "tiempo")],
+      ["Cerraron la página", cuenta((e) => motivoTipo(e.motivoCierre) === "abandono")],
+    ];
+
+    const porNivel = Object.entries(NIVELES_ONLINE).map(([id, nombre]) => {
+      const x = lista.filter((e) => e.nivel === id);
+      const a = x.filter((e) => e.resultado === "aprobado").length;
+      const prom = x.length ? Math.round(x.reduce((s, e) => s + (e.puntaje || 0), 0) / x.length) : null;
+      return `<tr><td>${nombre}</td><td class="num">${x.length}</td><td class="num">${a}</td><td class="num">${x.length - a}</td>
+        <td class="num">${x.length ? Math.round((a / x.length) * 100) + "%" : "—"}</td><td class="num">${prom === null ? "—" : prom + "%"}</td></tr>`;
+    }).join("");
+
+    // Errores por pregunta (sobre las preguntas respondidas de cada intento).
+    const porPregunta = {};
+    lista.forEach((e) => (e.detalle || []).forEach((p) => {
+      if (p.resultado === "S/D") return;
+      const k = `${e.brandId}:${e.nivel}:${p.id}`;
+      const q = porPregunta[k] || (porPregunta[k] = { texto: p.pregunta, marca: e.brandId, nivel: e.nivel, id: p.id, total: 0, errores: 0 });
+      q.total++;
+      if (p.resultado !== "correcta") q.errores++;
+    }));
+    const top = Object.values(porPregunta).filter((q) => q.errores)
+      .sort((a, b) => b.errores / b.total - a.errores / a.total || b.total - a.total).slice(0, 10);
+    const barras = top.length
+      ? top.map((q) => {
+          const pct = Math.round((q.errores / q.total) * 100);
+          return `<div class="err-bar" title="${escapeHtml(`${q.errores} de ${q.total} con error`)}">
+              <span class="err-text">${escapeHtml(q.texto)}</span>
+              <span class="err-meta">${escapeHtml((getBrand(q.marca) || {}).name || q.marca)} · ${NIVELES_ONLINE[q.nivel] || q.nivel} · ${q.errores} de ${q.total}</span>
+              <span class="err-track"><span class="err-fill" style="width:${pct}%"></span></span>
+              <span class="err-pct">${pct}%</span>
+            </div>`;
+        }).join("")
+      : `<p class="empty-table">Todavía no hay errores registrados.</p>`;
+
+    const intentos = lista.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const filas = intentos.length
+      ? intentos.map((e) => `
+          <tr>
+            <td>${escapeHtml(e.fecha)}</td>
+            <td>${escapeHtml((getBrand(e.brandId) || {}).name || e.brandId)}</td>
+            <td>${escapeHtml(e.localName)}</td>
+            <td>${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</td>
+            <td>${escapeHtml(e.puestoPostula)}</td>
+            <td class="num">${e.puntaje === null ? "—" : e.puntaje + "%"}</td>
+            <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
+            <td>${escapeHtml({ entregado: "Entregado", tiempo: "Sin tiempo", salida: "Salió de la pestaña", abandono: "Cerró la página" }[motivoTipo(e.motivoCierre)] || "—")}</td>
+            <td class="col-actions">${rowActionsHtml(e)}</td>
+          </tr>`).join("")
+      : `<tr><td colspan="9" class="empty-table">Todavía no hay exámenes online.</td></tr>`;
+
+    const opt = (value, label, sel) => `<option value="${value}"${value === sel ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    const marcaOpts = ASCENSOS_DATA.brands.map((b) => opt(b.id, b.name, panelFiltro.marca)).join("");
+    const nivelOpts = Object.entries(NIVELES_ONLINE).map(([id, n]) => opt(id, n, panelFiltro.nivel)).join("");
+
+    appEl.innerHTML = `
+      <div class="org-header">
+        <div>
+          <h2>Examen online</h2>
+          <p class="panel-sub">Resultados de <a href="${EXAMEN_URL}" target="_blank" rel="noopener noreferrer">${EXAMEN_URL.replace("https://", "").replace(/\/$/, "")}</a></p>
+        </div>
+        <div class="panel-filtros">
+          <select id="pfMarca">${opt("", "Todas las marcas", panelFiltro.marca)}${marcaOpts}</select>
+          <select id="pfNivel">${opt("", "Todos los niveles", panelFiltro.nivel)}${nivelOpts}</select>
+        </div>
+      </div>
+
+      <div class="kpi-grid">${kpis.map(([l, v]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+
+      <div class="panel-grid">
+        <section class="panel-card">
+          <h3>Resultados por nivel</h3>
+          <div class="table-scroll"><table class="exam-table">
+            <thead><tr><th>Nivel</th><th class="num">Intentos</th><th class="num">Aprob.</th><th class="num">Desaprob.</th><th class="num">% aprob.</th><th class="num">Promedio</th></tr></thead>
+            <tbody>${porNivel}</tbody>
+          </table></div>
+        </section>
+        <section class="panel-card">
+          <h3>Preguntas con más errores</h3>
+          <div class="err-list">${barras}</div>
+        </section>
+      </div>
+
+      <section class="panel-card">
+        <h3>Todos los intentos</h3>
+        <div class="table-scroll"><table class="exam-table">
+          <thead><tr><th>Fecha</th><th>Marca</th><th>Local</th><th>Nombre y apellido</th><th>Nivel</th><th class="num">%</th><th>Resultado</th><th>Cierre</th><th></th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table></div>
+      </section>
+
+      <section class="panel-card">
+        <div class="banco-head">
+          <h3>Preguntas de los exámenes</h3>
+          <div class="panel-filtros">
+            <select id="bMarca">${ASCENSOS_DATA.brands.map((b) => opt(b.id, b.name, panelFiltro.bancoMarca)).join("")}</select>
+            <select id="bNivel">${Object.entries(NIVELES_ONLINE).map(([id, n]) => opt(id, n, panelFiltro.bancoNivel)).join("")}</select>
+          </div>
+        </div>
+        <div id="bancoLista" class="banco-lista"><p class="empty-table">Cargando preguntas…</p></div>
+      </section>
+    `;
+
+    const refiltrar = () => {
+      panelFiltro.marca = document.getElementById("pfMarca").value;
+      panelFiltro.nivel = document.getElementById("pfNivel").value;
+      renderOnlinePanel();
+    };
+    document.getElementById("pfMarca").addEventListener("change", refiltrar);
+    document.getElementById("pfNivel").addEventListener("change", refiltrar);
+    ["bMarca", "bNivel"].forEach((idSel) => document.getElementById(idSel).addEventListener("change", () => {
+      panelFiltro.bancoMarca = document.getElementById("bMarca").value;
+      panelFiltro.bancoNivel = document.getElementById("bNivel").value;
+      pintarBanco(porPregunta);
+    }));
+    wireRowActions(appEl);
+    pintarBanco(porPregunta);
+  }
+
+  // Lista de preguntas de una marca/nivel con la respuesta correcta y su % de error.
+  function pintarBanco(porPregunta) {
+    const cont = document.getElementById("bancoLista");
+    cargarBancos().then((bancos) => {
+      if (!document.body.contains(cont)) return;
+      const preguntas = ((bancos[panelFiltro.bancoMarca] || {})[panelFiltro.bancoNivel]) || [];
+      if (!preguntas.length) {
+        cont.innerHTML = `<p class="empty-table">Todavía no hay preguntas cargadas para este nivel.</p>`;
+        return;
+      }
+      cont.innerHTML = preguntas.map((p, i) => {
+        const stat = porPregunta[`${panelFiltro.bancoMarca}:${panelFiltro.bancoNivel}:${p.id}`];
+        const err = stat ? `<span class="banco-err">${Math.round((stat.errores / stat.total) * 100)}% de error (${stat.total} resp.)</span>` : "";
+        const cuerpo = p.tipo === "grilla"
+          ? p.filas.map((f, j) => `<li class="ok">${escapeHtml(f)} → ${escapeHtml(p.columnas[p.correcta[j]])}</li>`).join("")
+          : p.opciones.map((o, j) => `<li class="${j === p.correcta ? "ok" : ""}">${escapeHtml(o)}</li>`).join("");
+        return `<div class="banco-item"><p><b>${i + 1}.</b> ${escapeHtml(p.texto)} ${err}</p><ul>${cuerpo}</ul></div>`;
+      }).join("");
+    }).catch((e) => {
+      if (document.body.contains(cont)) cont.innerHTML = `<p class="empty-table">${escapeHtml(e.message)}.</p>`;
     });
   }
 
@@ -1064,10 +1424,14 @@
     const hash = window.location.hash || "#/";
     const localMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)$/);
     const moverMatch = hash.match(/^#\/organigrama\/([^/]+)\/mover$/);
+    const onlineMatch = hash === "#/examen-online";
     const regionalMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)$/);
     const brandMatch = hash.match(/^#\/organigrama\/([^/]+)$/);
 
-    if (localMatch) {
+    renderAuthBar();
+    if (onlineMatch) {
+      renderOnlinePanel();
+    } else if (localMatch) {
       renderLocal(localMatch[1], localMatch[2], localMatch[3], localMatch[4]);
     } else if (moverMatch) {
       renderMover(moverMatch[1]);
