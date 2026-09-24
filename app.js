@@ -19,7 +19,6 @@
   const EXAMEN_URL = "https://examenes-emi.vercel.app/";
   const navCrumbEl = document.getElementById("navCrumb");
   const syncPillEl = document.getElementById("syncPill");
-  let syncOkTimeout = null;
 
   const RESULTADOS = {
     aprobado: "Aprobado",
@@ -1595,29 +1594,44 @@
     appEl.classList.add("fade-in");
   }
 
-  // Pill de estado de sincronización con la planilla (arriba a la derecha).
-  // "Sincronizado" se muestra un ratito y se esconde solo; el aviso de
-  // "sin conexión" queda fijo hasta que se pueda reconectar.
+  // Pill de estado de sincronización (arriba a la derecha). Queda siempre
+  // visible y al tocarla vuelve a traer los datos (planilla + Supabase y,
+  // si estás en Citaciones, el listado de citados) sin recargar la página.
+  let sincronizando = false;
+  let ultimaSync = null;
+
+  async function sincronizar() {
+    if (sincronizando) return;
+    sincronizando = true;
+    syncPillEl.className = "sync-pill sync-pill-busy";
+    syncPillEl.innerHTML = `${icon("refresh", { size: 13, class: "spin" })} Sincronizando…`;
+    try {
+      await ExamStore.retry();
+      if (window.location.hash === "#/citaciones" && citas.filas) await cargarCitaciones();
+    } finally {
+      sincronizando = false;
+      updateSyncPill();
+      route();
+    }
+  }
+
   function updateSyncPill() {
-    clearTimeout(syncOkTimeout);
     const err = ExamStore.getError();
     syncPillEl.hidden = false;
+    syncPillEl.setAttribute("role", "button");
+    syncPillEl.tabIndex = 0;
+    syncPillEl.onclick = sincronizar;
+    syncPillEl.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sincronizar(); } };
     if (err) {
       syncPillEl.className = "sync-pill sync-pill-error";
+      syncPillEl.title = "No se pudo sincronizar. Tocá para reintentar.";
       syncPillEl.innerHTML = `${icon("cloudOff", { size: 13 })} Sin conexión — mostrando datos guardados. <u>Reintentar</u>`;
-      syncPillEl.onclick = async () => {
-        syncPillEl.innerHTML = `${icon("cloud", { size: 13 })} Reintentando…`;
-        await ExamStore.retry();
-        updateSyncPill();
-        route();
-      };
     } else {
-      syncPillEl.onclick = null;
+      ultimaSync = new Date();
+      const hora = ultimaSync.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
       syncPillEl.className = "sync-pill sync-pill-ok";
-      syncPillEl.innerHTML = `${icon("cloud", { size: 13 })} Sincronizado`;
-      syncOkTimeout = setTimeout(() => {
-        syncPillEl.hidden = true;
-      }, 3000);
+      syncPillEl.title = "Tocá para sincronizar ahora";
+      syncPillEl.innerHTML = `${icon("cloud", { size: 13 })} Sincronizado ${hora} ${icon("refresh", { size: 13 })}`;
     }
   }
 
