@@ -19,6 +19,19 @@
 
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwWQud8u_W8V3jH3WmpGOrjMwddUEME2KCnoHQytaXvUV1vlghOjAyjcfaCv5VBUtPg/exec";
 
+// Resultados del examen online (Examenes-Emi), guardados en Supabase.
+// Se muestran junto a los cargados a mano en la planilla; son de solo
+// lectura (no se pueden eliminar desde acá). null = no se consultan.
+const SUPABASE_URL = "https://lyvjunfgobisrfdccrnq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5dmp1bmZnb2Jpc3JmZGNjcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTc5MTYsImV4cCI6MjEwNTgzMzkxNn0.-glFu4WVy_1c2-gBgu85Q31gwPZzxZmOlKAh6W1KZ-k";
+
+const NIVELES_ONLINE = { entrenador: "Entrenador", encargado: "Encargado", gerente: "Gerente" };
+const MOTIVOS_ONLINE = {
+  tiempo: "tiempo agotado",
+  abandono: "cerró la página",
+  salida: "cerrado por salir de la ventana",
+};
+
 const ExamStore = (function () {
   const LOCAL_BACKUP_KEY = "campusAscensos.examenes.v1";
 
@@ -68,7 +81,7 @@ const ExamStore = (function () {
     return data;
   }
 
-  async function fetchAll() {
+  async function fetchSheet() {
     const res = await fetch(SHEET_API_URL, { method: "GET" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -76,12 +89,65 @@ const ExamStore = (function () {
     return data.exams.map(withLocalKey);
   }
 
+  function fechaLocal(iso) {
+    return new Date(iso).toLocaleDateString("en-CA"); // AAAA-MM-DD en hora local
+  }
+
+  // Convierte un resultado del examen online al mismo formato que los de la planilla.
+  function onlineToRecord(r) {
+    const motivo = MOTIVOS_ONLINE[String(r.motivo_cierre || "").split(":")[0]];
+    return withLocalKey({
+      id: `online-${r.id}`,
+      origen: "online",
+      brandId: r.marca,
+      localName: r.local || "",
+      nombre: r.nombre || "",
+      apellido: r.apellido || "",
+      puestoActual: "",
+      puestoPostula: NIVELES_ONLINE[r.nivel] || r.nivel,
+      fecha: fechaLocal(r.creado),
+      asistio: true,
+      puntaje: typeof r.porcentaje === "number" ? r.porcentaje : null,
+      resultado: r.condicion === "Aprobado" ? "aprobado" : "desaprobado",
+      observaciones: "Examen online" + (motivo ? ` (${motivo})` : ""),
+      createdAt: r.creado,
+    });
+  }
+
+  async function fetchOnline() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/examenes_campus`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: "{}",
+    });
+    if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
+    return (await res.json()).map(onlineToRecord);
+  }
+
+  // Trae planilla + examen online en paralelo. Si falla una sola fuente se
+  // muestra lo de la otra y se marca el error (la pill ofrece reintentar).
+  async function fetchAll() {
+    const [sheet, online] = await Promise.allSettled([fetchSheet(), fetchOnline()]);
+    if (sheet.status === "rejected" && online.status === "rejected") throw sheet.reason;
+    const partialError = sheet.status === "rejected" ? sheet.reason : online.status === "rejected" ? online.reason : null;
+    return {
+      sheet: sheet.status === "fulfilled" ? sheet.value : null,
+      online: online.status === "fulfilled" ? online.value : [],
+      partialError,
+    };
+  }
+
   // Sube a la planilla los exámenes que hayan quedado guardados en este
   // navegador ANTES de conectar la planilla (o cargados mientras no había
   // conexión) y que todavía no estén ahí. Se fija por id, así que es
   // seguro llamarla en cada carga: si ya está todo subido, no hace nada.
   async function migratePending(remoteExams) {
-    const local = loadBackup();
+    const local = loadBackup().filter((e) => e.origen !== "online");
     if (!local.length) return;
     const remoteIds = new Set(remoteExams.map((e) => e.id));
     const missing = local.filter((e) => e.id && !remoteIds.has(e.id));
@@ -102,11 +168,13 @@ const ExamStore = (function () {
     if (loadPromise) return loadPromise;
     loadPromise = (async () => {
       try {
-        const remote = await fetchAll();
-        await migratePending(remote);
-        exams = remote;
+        const { sheet, online, partialError } = await fetchAll();
+        // Si la planilla no respondió, se usan los de la copia local para no perderlos de vista.
+        const manual = sheet || loadBackup().filter((e) => e.origen !== "online");
+        if (sheet) await migratePending(sheet);
+        exams = manual.concat(online);
         loaded = true;
-        lastError = null;
+        lastError = partialError;
         saveBackup(exams);
       } catch (err) {
         lastError = err;
@@ -193,6 +261,7 @@ const ExamStore = (function () {
   }
 
   async function remove(id) {
+    if (String(id).startsWith("online-")) throw new Error("los resultados del examen online no se eliminan desde el Campus");
     await post("remove", { id });
     exams = exams.filter((e) => e.id !== id);
     saveBackup(exams);
