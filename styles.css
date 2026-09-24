@@ -1254,3 +1254,167 @@ body.intro-active .section-label {
 @media (max-width: 520px) {
   .kpi-grid, .kpi-grid.kpi-grid-5 { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* =====================================================================
+   TEMA (estilo Atlassian): capa de estilos que se aplica sobre todo lo
+   anterior. Lienzo blanco, tarjetas de 20px, botones píldora en un solo
+   azul, panel oscuro con formas de color en la portada.
+   Para volver al diseño anterior alcanza con borrar este bloque (y la
+   fuente Inter/Manrope de index.html).
+   ===================================================================== */
+:root {
+  --blue: #1868db;
+  --blue-dark: #1558bc;
+  --tint: #e9f2fe;
+  --navy: #101214;
+  --fog: #f0f1f2;
+  --ash: #b7b9be;
+  --yellow: #fca700;
+  --violet: #bf63f3;
+  --lavender: #eed7fc;
+  --leaf: #22a06b;
+  --ink: #101214;
+  --ink-soft: #42526e;
+  --card-border: #e4e6ea;
+  --radius-lg: 20px;
+  --radius-md: 20px;
+  --shadow: rgba(9, 30, 66, 0.31) 0 0 1px 0, rgba(9, 30, 66, 0.25) 0 1px 1px 0;
+  --font-text: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+body { font-family: var(--font-text); line-height: 1.5; background: #fff; }
+h1, h2, h3, .brand-name, .person-name, .org-brand-title h2, .team-name, .quicklink-name, .intro-hero h1 {
+  font-family: var(--font-display);
+}
+a { color: var(--blue); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Barra superior: fija, blanca, con línea fina */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: #fff; border-bottom: 1px solid var(--fog);
+  padding: 10px 32px; min-height: 56px; gap: 16px;
+}
+.nav-crumb { color: var(--ink-soft); }
+.nav-crumb b { font-family: var(--font-display); font-weight: 800; }
+.brand-pill, .auth-link {
+  border-radius: 999px; border: 1px solid var(--card-border); font-weight: 500; color: var(--ink);
+}
+.brand-pill, .auth-link { white-space: nowrap; }
+.auth-link:hover { border-color: var(--ink); }
+.sync-pill { font-weight: 500; }
+.sync-pill-ok { background: #dcfff1; color: #216e4e; }
+.sync-pill-error { background: #fff7d6; color: #7f5f01; }
+
+main#app { max-width: 1200px; padding: 28px 32px 72px; }
+
+/* Portada oscura con formas de color */
+.hero, .intro-hero {
+  background: var(--navy);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  isolation: isolate;
+}
+.hero { padding: 56px 56px; }
+.hero::before, .hero::after, .intro-hero::before, .intro-hero::after {
+  content: ""; position: absolute; border-radius: 0; z-index: -1; filter: none; opacity: 1;
+}
+.intro-hero { position: relative; overflow: hidden; }
+.hero::before, .intro-hero::before {
+  width: 190px; height: 40px; top: 26px; right: -44px; left: auto;
+  background: var(--violet); transform: rotate(-9deg);
+  box-shadow: -120px 150px 0 -6px var(--blue);
+}
+.hero::after, .intro-hero::after {
+  width: 64px; height: 130px; bottom: -44px; right: 120px; top: auto;
+  background: var(--yellow); transform: rotate(14deg);
+  box-shadow: 150px -20px 0 -10px var(--leaf);
+}
+.hero h1 { font-size: 44px; font-weight: 500; line-height: 1.12; letter-spacing: 0.012em; }
+.hero h1 .highlight { color: var(--yellow); }
+.hero-badge, .intro-hero-label {
+  background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: 500; letter-spacing: 0.02em;
+}
+.hero-stat { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); }
+
+/* Botones: píldoras en un solo azul */
+.btn-primary {
+  background: var(--blue); border-radius: 28px; padding: 10px 22px;
+  font-family: var(--font-text); font-size: 15px; font-weight: 500;
+}
+.btn-primary:hover { background: var(--blue-dark); filter: none; }
+.btn-ghost {
+  border-radius: 28px; border-color: var(--ink); color: var(--ink);
+  padding: 9px 20px; font-weight: 500;
+}
+.btn-ghost:hover { background: var(--fog); }
+.intro-hero-btn { background: var(--yellow); color: var(--navy); box-shadow: none; }
+.intro-hero-btn:hover { background: #e59700; transform: none; box-shadow: none; }
+.brand-link, .back-link { color: var(--blue); font-weight: 500; }
+
+/* Pantalla de inicio: lienzo blanco (sin manchas de color) */
+body.intro-active { background: #fff; }
+body.intro-active::before, body.intro-active::after { display: none; }
+body.intro-active .section-label { color: var(--ink-soft); }
+.intro-hero { padding: 36px 40px; }
+.intro-hero-icon { background: rgba(255, 255, 255, 0.12); }
+.intro-hero h1 { font-size: 30px; font-weight: 700; }
+.intro-hero h1 .highlight { background: none; color: var(--yellow); padding: 0; }
+
+/* Tarjetas: blancas, 20px, sombra mínima, sin bordes de color */
+.brand-card, .org-card, .recent-exams-panel, .exam-form, .panel-card, .kpi,
+.mover-card, .quicklink-card, .team-card, .stat-pill, .edit-dialog {
+  border: none; border-radius: var(--radius-lg); box-shadow: var(--shadow); background: #fff;
+}
+.quicklink-card, .team-card { border-top: none; border-left: none; }
+.quicklink-card:hover, .quicklink-card:focus-visible, .team-card:hover {
+  transform: translateY(-2px); box-shadow: rgba(9, 30, 66, 0.25) 0 4px 12px -2px, var(--shadow);
+}
+.quicklink-card-disabled:hover { transform: none; box-shadow: var(--shadow); }
+.team-role { color: var(--ink-soft); }
+.brand-card { padding: 24px; }
+.brand-name { font-size: 22px; font-weight: 700; }
+.stat-pill { border-radius: 999px; background: var(--fog); box-shadow: none; }
+.recent-exam:hover, .exam-table tbody tr:hover { background: #f7f8f9; }
+
+/* Títulos de sección */
+.section-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--ink-soft); }
+.org-header h2, .org-brand-title h2 { font-size: 30px; font-weight: 700; }
+
+/* Formularios */
+.exam-form { padding: 24px; }
+.exam-form label { color: var(--ink-soft); font-weight: 500; }
+.exam-form input, .exam-form select, .exam-form textarea,
+.panel-filtros select, .panel-filtros input[type="date"], .mover-card select {
+  border: 1px solid var(--ash); border-radius: 8px; font-family: var(--font-text);
+}
+.exam-form input:focus, .exam-form select:focus, .exam-form textarea:focus {
+  outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue);
+}
+
+/* Tablas */
+.exam-table th { color: var(--ink-soft); font-weight: 500; border-bottom: 2px solid var(--fog); }
+.exam-table td { border-bottom-color: var(--fog); }
+
+/* Etiquetas de estado: píldoras suaves */
+.resultado-badge { border-radius: 999px; font-weight: 500; padding: 3px 10px; }
+.resultado-aprobado { background: #dcfff1; color: #216e4e; }
+.resultado-desaprobado { background: #ffeceb; color: #ae2e24; }
+.resultado-pendiente { background: #fff7d6; color: #7f5f01; }
+.resultado-no-asistio { background: var(--fog); color: var(--ink-soft); }
+
+/* Indicadores */
+.kpi { padding: 18px 20px; }
+.kpi b { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
+.kpi span { font-size: 13px; }
+.err-track { background: var(--fog); border-radius: 999px; }
+.err-fill { background: #e2483d; border-radius: 999px; }
+.banco-err { border-radius: 999px; }
+
+@media (max-width: 720px) {
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar-right { flex-wrap: wrap; gap: 6px; }
+  main#app { padding: 20px 16px 56px; }
+  .hero { padding: 36px 24px; }
+  .hero h1 { font-size: 32px; }
+}
