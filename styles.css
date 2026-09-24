@@ -1478,8 +1478,10 @@ body.intro-active .section-label { color: var(--ink-soft); }
 
 /* Organigrama: tarjetas y fotos grandes, fotos centradas en la cara */
 .avatar { border: 2px solid #fff; box-shadow: 0 0 0 1px var(--hairline); }
-.avatar-img { object-position: 50% 12%; transform: scale(1.6); transform-origin: 50% 18%; }
-.team-card .avatar-img { transform: none; object-position: 50% 30%; }
+/* Las fotos se sirven ya recortadas sobre la cara (assets/photos/caras).
+   Solo si falta el recorte se usa la original, acercada. */
+.avatar-img { object-position: 50% 50%; }
+.avatar-img.avatar-original { object-position: 50% 12%; transform: scale(1.6); transform-origin: 50% 18%; }
 .avatar-fallback { font-size: calc(var(--avatar-size, 44px) * 0.36); }
 .org-card { padding: 22px 24px; min-width: 260px; }
 .org-card-row { gap: 16px; align-items: center; }

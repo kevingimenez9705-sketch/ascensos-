@@ -74,14 +74,16 @@
   function avatar(person, brandId, size) {
     size = size || 44;
     const slug = `${brandId}-${slugify(person.name)}`;
-    const jpg = `assets/photos/${slug}.jpg`;
-    const png = `assets/photos/${slug}.png`;
+    // Primero el recorte centrado en la cara (assets/photos/caras, generado a
+    // partir de la foto original); si no existe, la foto original .jpg o .png.
+    const cara = `assets/photos/caras/${slug}.jpg`;
+    const fallbacks = `assets/photos/${slug}.jpg|assets/photos/${slug}.png`;
     return `
       <span class="avatar" style="--avatar-size:${size}px">
         <span class="avatar-fallback">${escapeHtml(initialsOf(person.name))}</span>
-        <img class="avatar-img" alt="" src="${jpg}" data-fallback="${png}"
+        <img class="avatar-img" alt="" src="${cara}" data-fallback="${fallbacks}"
              onload="this.style.opacity=1"
-             onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.fallback}else{this.style.display='none'}">
+             onerror="const r=(this.dataset.fallback||'').split('|').filter(Boolean);if(r.length){this.classList.add('avatar-original');this.dataset.fallback=r.slice(1).join('|');this.src=r[0]}else{this.style.display='none'}">
       </span>`;
   }
 
