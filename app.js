@@ -110,7 +110,8 @@
     return parts
       .map((p, i) => {
         const text = p.hash ? crumbLink(p.hash, p.label) : escapeHtml(p.label);
-        return i === 0 ? `<b>${text}</b>` : text;
+        if (i === 0) return `<b>${icon("cap", { size: 18 })} ${text}</b>`;
+        return i === parts.length - 1 ? `<span class="crumb-active">${text}</span>` : text;
       })
       .join(` ${icon("chevronRight", { size: 12, class: "crumb-sep" })} `);
   }
@@ -191,9 +192,13 @@
     if (!stats.exams) {
       return `<div class="brand-stats">Todavía no se cargaron exámenes en esta marca.</div>`;
     }
+    const prom = stats.avgScore === null ? "S/D" : Number(stats.avgScore).toLocaleString("es-AR");
     return `
-      <div class="brand-stats"><b>${stats.exams}</b> exámenes · <b>${stats.approved}</b> aprobados · Prom. <b>${scoreLabel(stats.avgScore)}</b></div>
-      <div class="brand-stats"><b>${pctLabel(stats.attendancePct)}</b> asistencia · <b>${pctLabel(stats.approvalPct)}</b> aprobados</div>`;
+      <div class="brand-kpis">
+        <div><b>${stats.exams.toLocaleString("es-AR")}</b><span>Exámenes</span></div>
+        <div><b>${stats.approved.toLocaleString("es-AR")}</b><span>Aprobados</span></div>
+        <div><b>${prom}</b><span>Promedio</span></div>
+      </div>`;
   }
 
   // Todos los nombres de local que cuelgan de un regional (organigrama efectivo).
@@ -235,7 +240,7 @@
               <span class="recent-exam-name">${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</span>
               <span class="recent-exam-meta">${escapeHtml(e.localName)} · ${escapeHtml(brand.name)} · ${escapeHtml(when)}</span>
             </span>
-            <span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span>
+            <span class="resultado-badge resultado-${e.resultado}">${e.resultado === "aprobado" ? icon("check", { size: 14 }) : ""}${RESULTADOS[e.resultado] || e.resultado}</span>
           </a>`;
       })
       .join("");
@@ -375,7 +380,7 @@
       .map((brand) => {
         const s = ExamStore.statsForBrand(brand.id);
         return `
-          <div class="brand-card" style="--brand-color:${brand.color}">
+          <div class="brand-card" data-brand-id="${brand.id}" style="--brand-color:${brand.color}">
             <div class="brand-card-top">
               ${brandLogo(brand)}
               <div>
@@ -384,7 +389,10 @@
               </div>
             </div>
             ${statsBrandLinesHtml(s)}
-            <button class="brand-link" data-brand="${brand.id}">Ver organigrama ${icon("arrowRight", { size: 14 })}</button>
+            <div class="brand-foot">
+              <span class="brand-stats">${s.exams ? `<b>${pctLabel(s.attendancePct)}</b> asistencia · <b>${pctLabel(s.approvalPct)}</b> aprobación` : ""}</span>
+              <button class="brand-link" data-brand="${brand.id}">Ver organigrama ${icon("arrowRight", { size: 14 })}</button>
+            </div>
           </div>`;
       })
       .join("");
@@ -404,10 +412,10 @@
           <div class="hero-stat"><b>${stats.people}</b> personas en el organigrama</div>
           <div class="hero-stat"><b>${stats.locales}</b> locales</div>
         </div>
+        <button class="btn-primary hero-cta" id="quickExamToggle">${icon("plus", { size: 16 })} Cargar examen</button>
       </section>
 
       <div class="quick-exam-section">
-        <button class="btn-primary" id="quickExamToggle" style="--brand-color:#1e293b">${icon("plus", { size: 14 })} Cargar examen</button>
         <form id="quickExamForm" class="exam-form" hidden>
           <p class="exam-form-hint">Elegí dónde se rindió el examen:</p>
           <div class="exam-form-grid">
@@ -443,10 +451,10 @@
         </form>
       </div>
 
-      <p class="section-label">MARCAS</p>
+      <div class="section-head"><h2>Tus marcas</h2><p>Organigramas y resultados de ascensos.</p></div>
       <div class="brand-grid">${cards}</div>
 
-      <p class="section-label section-label-spaced">${icon("bell", { size: 13 })} ÚLTIMOS EXÁMENES CARGADOS</p>
+      <div class="section-head section-head-spaced"><h2>Últimos exámenes cargados</h2></div>
       <div class="recent-exams-panel">${recentExamsHtml()}</div>
     `;
 
@@ -965,8 +973,11 @@
 
   // ---------- Acceso al panel del examen online ----------
   function renderAuthBar() {
-    authBarEl.innerHTML = `<a class="auth-link" href="#/citaciones">${icon("bell", { size: 14 })} Citaciones</a>` +
-      `<a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>`;
+    const actual = window.location.hash;
+    authBarEl.innerHTML =
+      `<a class="auth-link${actual === "#/citaciones" ? " active" : ""}" href="#/citaciones">Citaciones</a>` +
+      `<a class="auth-link${actual === "#/examen-online" ? " active" : ""}" href="#/examen-online">Examen online</a>` +
+      `<span class="user-chip" title="Capacitación">CA</span>`;
   }
 
   // ---------- Panel del examen online (Capacitación) ----------
