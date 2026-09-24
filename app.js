@@ -295,7 +295,8 @@
       role: "Capacitador",
       trait: "Genuino",
       color: "#2176ae",
-      link: "https://www.autoproctor.co/tests/3omYZ4RJr5/instructions/",
+      // Examen de ascenso online (repo Examenes-Emi, proyecto examenes-emi en Vercel).
+      link: "https://examenes-emi.vercel.app/?marca=sabores",
     },
   ];
 
