@@ -119,41 +119,51 @@ const ExamStore = (function () {
     });
   }
 
-  // Llamada a la tabla de resultados con la sesión de Capacitación.
-  async function restOnline(method, query, body) {
-    const token = await Auth.token();
-    if (!token) throw new Error("tenés que ingresar con tu usuario de Capacitación");
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/examen_resultados${query}`, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${token}`,
-        Prefer: "return=minimal",
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
-    return res;
+  // Clave de Capacitación para corregir/borrar exámenes online. Se pide una
+  // vez y queda guardada en este navegador. La clave real vive solo en
+  // Supabase (tabla capacitacion_clave), nunca en el código.
+  const CLAVE_KEY = "campusAscensos.clave.v1";
+  function claveCapacitacion(incorrecta) {
+    let clave = null;
+    try { clave = localStorage.getItem(CLAVE_KEY); } catch (e) { /* sin almacenamiento */ }
+    if (!clave || incorrecta) {
+      clave = prompt(incorrecta ? "Clave incorrecta. Ingresá la clave de Capacitación:" : "Clave de Capacitación (para corregir o borrar):");
+      if (!clave) throw new Error("se canceló");
+      try { localStorage.setItem(CLAVE_KEY, clave); } catch (e) { /* sin almacenamiento */ }
+    }
+    return clave;
   }
 
-  async function fetchOnline() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
-    // Con sesión de Capacitación se trae el detalle completo (respuestas incluidas).
-    if (typeof Auth !== "undefined" && Auth.isLoggedIn() && (await Auth.token())) {
-      const res = await restOnline("GET", "?select=id,marca,local,nombre,apellido,nivel,porcentaje,condicion,payload,creado&order=creado.desc");
-      return (await res.json()).map(onlineToRecord);
-    }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/examenes_campus`, {
+  async function rpcOnline(fn, params) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: "{}",
+      body: JSON.stringify(params || {}),
     });
-    if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || `Supabase HTTP ${res.status}`);
+    }
+    return res;
+  }
+
+  // Corrige o borra con clave; si la guardada es incorrecta, la vuelve a pedir una vez.
+  async function rpcConClave(fn, params) {
+    try {
+      return await rpcOnline(fn, Object.assign({ p_clave: claveCapacitacion(false) }, params));
+    } catch (err) {
+      if (!/clave incorrecta/i.test(err.message)) throw err;
+      return rpcOnline(fn, Object.assign({ p_clave: claveCapacitacion(true) }, params));
+    }
+  }
+
+  async function fetchOnline() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
+    const res = await rpcOnline("examenes_panel");
     return (await res.json()).map(onlineToRecord);
   }
 
@@ -290,7 +300,7 @@ const ExamStore = (function () {
 
   async function remove(id) {
     if (String(id).startsWith("online-")) {
-      await restOnline("DELETE", `?id=eq.${encodeURIComponent(String(id).slice(7))}`);
+      await rpcConClave("borrar_resultado", { p_id: Number(String(id).slice(7)) });
       exams = exams.filter((e) => e.id !== id);
       saveBackup(exams);
       return;
@@ -309,13 +319,14 @@ const ExamStore = (function () {
     const next = Object.assign({}, current, changes);
     if (current.origen === "online") {
       const nivel = Object.keys(NIVELES_ONLINE).find((k) => NIVELES_ONLINE[k] === next.puestoPostula) || current.nivel;
-      await restOnline("PATCH", `?id=eq.${encodeURIComponent(String(id).slice(7))}`, {
-        nombre: next.nombre,
-        apellido: next.apellido,
-        local: next.localName,
-        nivel,
-        porcentaje: next.puntaje,
-        condicion: next.resultado === "aprobado" ? "Aprobado" : "Desaprobado",
+      await rpcConClave("corregir_resultado", {
+        p_id: Number(String(id).slice(7)),
+        p_nombre: next.nombre,
+        p_apellido: next.apellido,
+        p_local: next.localName,
+        p_nivel: nivel,
+        p_porcentaje: next.puntaje,
+        p_condicion: next.resultado === "aprobado" ? "Aprobado" : "Desaprobado",
       });
       Object.assign(next, { nivel, puestoPostula: NIVELES_ONLINE[nivel] });
     } else {

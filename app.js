@@ -841,9 +841,9 @@
     wireRowActions(appEl);
   }
 
-  // ---------- Acciones por examen (solo con sesión de Capacitación) ----------
+  // ---------- Acciones por examen (corregir / borrar) ----------
+  // Los del examen online piden la clave de Capacitación (ver exams.js).
   function rowActionsHtml(e) {
-    if (!Auth.isLoggedIn()) return "";
     return `
       <button class="row-edit" data-id="${escapeHtml(e.id)}" title="Corregir examen">${icon("edit", { size: 15 })}</button>
       <button class="row-delete" data-id="${escapeHtml(e.id)}" title="Eliminar examen">${icon("trash", { size: 15 })}</button>`;
@@ -910,7 +910,7 @@
           </label>
           ${online ? "" : `<label class="exam-form-full">Observaciones <textarea name="observaciones" rows="2"></textarea></label>`}
         </div>
-        ${online ? `<p class="exam-form-hint">Si pasás un examen online a Aprobado, la persona queda habilitada para rendir el nivel siguiente.</p>` : ""}
+        ${online ? `<p class="exam-form-hint">Se pide la clave de Capacitación. Si pasás un examen online a Aprobado, la persona queda habilitada para rendir el nivel siguiente.</p>` : ""}
         <div class="exam-form-actions">
           <button type="button" class="btn-ghost" data-cancel>Cancelar</button>
           <button type="submit" class="btn-primary" style="--brand-color:${brand ? brand.color : "#1e293b"}">Guardar cambios</button>
@@ -962,67 +962,9 @@
     dlg.showModal();
   }
 
-  // ---------- Sesión de Capacitación ----------
+  // ---------- Acceso al panel del examen online ----------
   function renderAuthBar() {
-    if (Auth.isLoggedIn()) {
-      authBarEl.innerHTML = `
-        <a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>
-        <button class="auth-link auth-out" id="logoutBtn" title="${escapeHtml(Auth.email() || "")}">Salir</button>`;
-      document.getElementById("logoutBtn").addEventListener("click", async () => {
-        Auth.logout();
-        renderAuthBar();
-        await ExamStore.retry();
-        route();
-      });
-    } else {
-      authBarEl.innerHTML = `<button class="auth-link" id="loginBtn">${icon("lock", { size: 13 })} Ingresar</button>`;
-      document.getElementById("loginBtn").addEventListener("click", () => openLoginDialog());
-    }
-  }
-
-  function openLoginDialog(onDone) {
-    const dlg = document.createElement("dialog");
-    dlg.className = "edit-dialog login-dialog";
-    dlg.innerHTML = `
-      <form class="exam-form">
-        <h3>Acceso Capacitación</h3>
-        <p class="exam-form-hint">Para corregir y borrar exámenes y ver el panel del examen online.</p>
-        <div class="exam-form-grid login-grid">
-          <label class="exam-form-full">Email <input type="email" name="email" required autocomplete="username"></label>
-          <label class="exam-form-full">Contraseña <input type="password" name="password" required autocomplete="current-password"></label>
-        </div>
-        <p class="login-error" hidden></p>
-        <div class="exam-form-actions">
-          <button type="button" class="btn-ghost" data-cancel>Cancelar</button>
-          <button type="submit" class="btn-primary" style="--brand-color:#4a52b8">Ingresar</button>
-        </div>
-      </form>`;
-    document.body.appendChild(dlg);
-    const form = dlg.querySelector("form");
-    const errEl = dlg.querySelector(".login-error");
-    dlg.querySelector("[data-cancel]").addEventListener("click", () => dlg.close());
-    dlg.addEventListener("close", () => dlg.remove());
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const btn = form.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      errEl.hidden = true;
-      try {
-        await Auth.login(form.elements.email.value.trim(), form.elements.password.value);
-        dlg.close();
-        renderAuthBar();
-        await ExamStore.retry();
-        updateSyncPill();
-        if (onDone) onDone();
-        else route();
-      } catch (err) {
-        errEl.textContent = err.message;
-        errEl.hidden = false;
-        btn.disabled = false;
-      }
-    });
-    dlg.showModal();
-    form.elements.email.focus();
+    authBarEl.innerHTML = `<a class="auth-link" href="#/examen-online">${icon("chart", { size: 14 })} Examen online</a>`;
   }
 
   // ---------- Panel del examen online (Capacitación) ----------
@@ -1050,16 +992,6 @@
   function renderOnlinePanel() {
     navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }, { label: "Examen online" }]);
     brandPillEl.innerHTML = "";
-
-    if (!Auth.isLoggedIn()) {
-      appEl.innerHTML = `
-        <div class="empty-state">
-          ${icon("lock", { size: 18 })} Este panel es solo para Capacitación.<br><br>
-          <button class="btn-primary" id="panelLogin" style="--brand-color:#4a52b8">Ingresar</button>
-        </div>`;
-      document.getElementById("panelLogin").addEventListener("click", () => openLoginDialog());
-      return;
-    }
 
     const todos = ExamStore.all().filter((e) => e.origen === "online");
     const lista = todos.filter((e) =>
