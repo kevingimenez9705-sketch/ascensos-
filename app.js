@@ -1035,7 +1035,7 @@
     const intentos = lista.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     const filas = intentos.length
       ? intentos.map((e) => `
-          <tr>
+          <tr class="${e.detalle ? "fila-detalle" : ""}" data-det="${escapeHtml(e.id)}"${e.detalle ? ' title="Ver preguntas erróneas"' : ""}>
             <td>${escapeHtml(e.fecha)}</td>
             <td>${escapeHtml((getBrand(e.brandId) || {}).name || e.brandId)}</td>
             <td>${escapeHtml(e.localName)}</td>
@@ -1045,7 +1045,8 @@
             <td><span class="resultado-badge resultado-${e.resultado}">${RESULTADOS[e.resultado] || e.resultado}</span></td>
             <td>${escapeHtml({ entregado: "Entregado", tiempo: "Sin tiempo", salida: "Salió de la pestaña", abandono: "Cerró la página", ausente: "No asistió" }[motivoTipo(e.motivoCierre)] || "—")}</td>
             <td class="col-actions">${rowActionsHtml(e)}</td>
-          </tr>`).join("")
+          </tr>
+          ${e.detalle ? `<tr class="det-errores" data-det-de="${escapeHtml(e.id)}" hidden><td colspan="9">${erroresHtml(e)}</td></tr>` : ""}`).join("")
       : `<tr><td colspan="9" class="empty-table">Todavía no hay exámenes online.</td></tr>`;
 
     const opt = (value, label, sel) => `<option value="${value}"${value === sel ? " selected" : ""}>${escapeHtml(label)}</option>`;
@@ -1113,7 +1114,27 @@
       pintarBanco(porPregunta);
     }));
     wireRowActions(appEl);
+    // Clic en un intento: muestra u oculta sus preguntas erróneas.
+    appEl.querySelectorAll("tr.fila-detalle").forEach((tr) => tr.addEventListener("click", (ev) => {
+      if (ev.target.closest("button")) return;
+      const det = appEl.querySelector(`tr[data-det-de="${CSS.escape(tr.dataset.det)}"]`);
+      det.hidden = !det.hidden;
+      tr.classList.toggle("abierta", !det.hidden);
+    }));
     pintarBanco(porPregunta);
+  }
+
+  // Preguntas respondidas mal o sin responder en un intento, con la respuesta del postulante.
+  function erroresHtml(e) {
+    const mal = e.detalle.filter((p) => p.resultado === "incorrecta");
+    if (!mal.length) {
+      return `<p class="empty-table">${e.detalle.length ? "Respondió todas las preguntas bien." : "Sin detalle de respuestas (el examen se cerró sin entregar)."}</p>`;
+    }
+    return `<div class="det-titulo">Preguntas erróneas (${mal.length} de ${e.detalle.length})</div>
+      <ol class="det-lista">${mal.map((p) => `
+        <li><span>${escapeHtml(p.pregunta)}</span>
+          <small>Respondió: ${p.respuesta ? escapeHtml(p.respuesta) : "<em>sin responder</em>"}</small></li>`).join("")}
+      </ol>`;
   }
 
   // Lista de preguntas de una marca/nivel con la respuesta correcta y su % de error.

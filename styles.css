@@ -1512,3 +1512,12 @@ body.intro-active .section-label { color: var(--ink-soft); }
 /* Acceso "Panel de Exámenes" en la pantalla de entrada */
 .quicklink-panel { font: inherit; text-align: left; cursor: pointer; }
 body.intro-active main#app { padding-top: 28px; }
+
+/* Examen online: preguntas erróneas de un intento */
+.exam-table tr.fila-detalle { cursor: pointer; }
+.exam-table tr.fila-detalle.abierta td { background: #f7faff; }
+.exam-table tr.det-errores td { white-space: normal; background: #fbfcff; padding: 14px 20px 18px; }
+.det-titulo { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #d64545; }
+.det-lista { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.det-lista li { font-size: 13px; }
+.det-lista small { display: block; color: var(--ink-soft); margin-top: 2px; }
