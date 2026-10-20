@@ -400,6 +400,24 @@ const ExamStore = (function () {
     await rpcConClave("borrar_citacion", { p_id: id });
   }
 
+  // ---------- Habilitaciones manuales (Supabase) ----------
+  // Permiten rendir un nivel online sin haber aprobado los anteriores
+  // (p. ej. quienes rindieron en papel); en el examen figuran como eximidos.
+  async function habilitaciones() {
+    const res = await rpcConClave("habilitaciones_listado", {});
+    return (await res.json()) || [];
+  }
+
+  // personas: [{ dni, nivel, nombre, apellido, motivo }]
+  async function habilitar(marca, personas) {
+    const res = await rpcConClave("habilitar_personas", { p_marca: marca, p_personas: personas });
+    return res.json();
+  }
+
+  async function borrarHabilitacion(id) {
+    await rpcConClave("borrar_habilitacion", { p_id: id });
+  }
+
   return {
     ensureLoaded,
     update,
@@ -409,6 +427,9 @@ const ExamStore = (function () {
     citaciones,
     citar,
     borrarCitacion,
+    habilitaciones,
+    habilitar,
+    borrarHabilitacion,
     retry,
     isLoaded,
     getError,
