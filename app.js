@@ -6,6 +6,7 @@
 //   #/organigrama/:brandId/:regionalId/:zonalId/:localSlug -> exámenes de ascenso cargados en ese local
 //   #/examen-online                               -> panel del examen online
 //   #/citaciones                                  -> citados a examen y no asistencias
+//   #/habilitaciones                              -> habilitados a rendir un nivel sin aprobar los anteriores
 //
 // Fotos y logos: ver assets/README.md para la convención de nombres de
 // archivo. Mientras no exista el archivo real, se muestra automáticamente
@@ -971,6 +972,7 @@
     const actual = window.location.hash;
     authBarEl.innerHTML =
       `<a class="auth-link${actual === "#/citaciones" ? " active" : ""}" href="#/citaciones">Citaciones</a>` +
+      `<a class="auth-link${actual === "#/habilitaciones" ? " active" : ""}" href="#/habilitaciones">Habilitaciones</a>` +
       `<a class="auth-link${actual === "#/examen-online" ? " active" : ""}" href="#/examen-online">Examen online</a>` +
       `<span class="user-chip" title="Capacitación">CA</span>`;
   }
@@ -1382,6 +1384,156 @@
     if (!citas.filas && !citas.cargando && !citas.error && (ExamStore.tieneClave() || citas.pedida)) cargarCitaciones();
   }
 
+  // ---------- Habilitaciones manuales (Capacitación) ----------
+  // Habilita a un DNI a rendir un nivel online sin haber aprobado los
+  // anteriores (p. ej. si los rindió en papel). Se mantiene la espera de 48 hs.
+  const habs = { filas: null, error: null, cargando: false, marca: "", pedida: false };
+
+  async function cargarHabilitaciones() {
+    habs.cargando = true;
+    try {
+      habs.filas = await ExamStore.habilitaciones();
+      habs.error = null;
+    } catch (e) {
+      habs.error = e.message;
+    }
+    habs.cargando = false;
+    if (window.location.hash === "#/habilitaciones") renderHabilitaciones();
+  }
+
+  function renderHabilitaciones() {
+    navCrumbEl.innerHTML = crumbs([{ label: "Campus" }, { hash: "#/", label: "Ascensos" }, { label: "Habilitaciones" }]);
+    brandPillEl.innerHTML = "";
+
+    const opt = (value, label, sel) => `<option value="${value}"${value === sel ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    const marcaOpts = (sel) => ASCENSOS_DATA.brands.map((b) => opt(b.id, b.name, sel)).join("");
+    const nivelOpts = Object.entries(NIVELES_ONLINE).map(([id, n]) => opt(id, n, "gerente")).join("");
+    const filas = (habs.filas || []).filter((h) => !habs.marca || h.marca === habs.marca);
+
+    let cuerpo;
+    if (!habs.filas && !ExamStore.tieneClave() && !habs.pedida) {
+      cuerpo = `<tr><td colspan="8" class="empty-table"><button class="btn-primary" id="verHabs" style="--brand-color:#4a52b8">${icon("lock", { size: 13 })} Ver habilitaciones (pide la clave de Capacitación)</button></td></tr>`;
+    } else if (!habs.filas && habs.error) {
+      cuerpo = `<tr><td colspan="8" class="empty-table">${escapeHtml(`No se pudo cargar: ${habs.error}.`)} <button class="btn-ghost" id="verHabs">Reintentar</button></td></tr>`;
+    } else if (!habs.filas) {
+      cuerpo = `<tr><td colspan="8" class="empty-table">Cargando habilitaciones…</td></tr>`;
+    } else if (!filas.length) {
+      cuerpo = `<tr><td colspan="8" class="empty-table">No hay habilitaciones cargadas.</td></tr>`;
+    } else {
+      cuerpo = filas.map((h) => `
+        <tr>
+          <td>${escapeHtml(new Date(h.creado).toLocaleDateString("es-AR"))}</td>
+          <td>${escapeHtml((getBrand(h.marca) || {}).name || h.marca)}</td>
+          <td>${escapeHtml([h.nombre, h.apellido].filter(Boolean).join(" "))}</td>
+          <td>${escapeHtml(h.dni)}</td>
+          <td>${escapeHtml(NIVELES_ONLINE[h.nivel] || h.nivel)}</td>
+          <td>${escapeHtml(h.motivo || "")}</td>
+          <td>${h.condicion ? escapeHtml(`${h.condicion} (${h.porcentaje}%)`) : "Sin rendir"}</td>
+          <td class="col-actions"><button class="row-delete hab-quitar" data-id="${h.id}" title="Quitar habilitación">${icon("trash", { size: 15 })}</button></td>
+        </tr>`).join("");
+    }
+
+    appEl.innerHTML = `
+      <div class="org-header">
+        <div>
+          <h2>Habilitaciones</h2>
+          <p class="panel-sub">La persona puede rendir online el nivel habilitado sin haber aprobado los anteriores (por ejemplo, si los rindió en papel); en el examen le figuran como <b>Eximido</b>. Si desaprueba, se mantiene la espera de 48 hs.</p>
+        </div>
+      </div>
+
+      <section class="panel-card">
+        <h3>Habilitar</h3>
+        <form id="habForm" class="exam-form cita-form">
+          <div class="exam-form-grid">
+            <label>Marca<select name="marca" required>${marcaOpts(habs.marca || ASCENSOS_DATA.brands[0].id)}</select></label>
+            <label>DNI<input type="text" name="dni" inputmode="numeric" maxlength="8" pattern="\\d{7,8}" required></label>
+            <label>Nivel a habilitar<select name="nivel" required>${nivelOpts}</select></label>
+            <label>Nombre<input type="text" name="nombre" required></label>
+            <label>Apellido<input type="text" name="apellido" required></label>
+            <label>Motivo<input type="text" name="motivo" placeholder="Ej: rindió Entrenador y Encargado en papel"></label>
+          </div>
+          <details class="cita-pegar">
+            <summary>Habilitar varios a la vez (pegar desde Excel)</summary>
+            <textarea name="lista" rows="5" placeholder="Una persona por fila: DNI · Nivel · Nombre · Apellido&#10;30111222	Gerente	Ana	Pérez"></textarea>
+            <p class="exam-form-hint">Si pegás una lista, se usan la marca y el motivo de arriba y se ignoran los demás campos.</p>
+          </details>
+          <div class="exam-form-actions">
+            <span class="cita-msg" id="habMsg"></span>
+            <button type="submit" class="btn-primary" style="--brand-color:#1e293b">${icon("plus", { size: 14 })} Habilitar</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel-card">
+        <div class="banco-head">
+          <h3>Habilitados</h3>
+          <div class="panel-filtros">
+            <select id="hMarca">${opt("", "Todas las marcas", habs.marca)}${marcaOpts(habs.marca)}</select>
+          </div>
+        </div>
+        <div class="table-scroll"><table class="exam-table">
+          <thead><tr><th>Alta</th><th>Marca</th><th>Nombre y apellido</th><th>DNI</th><th>Nivel habilitado</th><th>Motivo</th><th>Resultado</th><th></th></tr></thead>
+          <tbody>${cuerpo}</tbody>
+        </table></div>
+      </section>
+    `;
+
+    const form = document.getElementById("habForm");
+    // Con una lista pegada, los campos de una sola persona dejan de ser obligatorios.
+    const lista = form.elements.lista;
+    lista.addEventListener("input", () => {
+      const hayLista = !!lista.value.trim();
+      ["dni", "nivel", "nombre", "apellido"].forEach((k) => { form.elements[k].required = !hayLista; });
+    });
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const msg = document.getElementById("habMsg");
+      const d = new FormData(form);
+      const motivo = d.get("motivo");
+      const personas = lista.value.trim()
+        ? leerPegado(lista.value).map(({ dni, nivel, nombre, apellido }) => ({ dni, nivel, nombre, apellido, motivo }))
+        : [{ dni: d.get("dni"), nivel: d.get("nivel"), nombre: d.get("nombre"), apellido: d.get("apellido"), motivo }];
+      if (!personas.length) { msg.textContent = "No se encontró ninguna fila con DNI."; return; }
+      const btn = form.querySelector("[type=submit]");
+      btn.disabled = true;
+      msg.textContent = "Guardando…";
+      try {
+        const r = await ExamStore.habilitar(d.get("marca"), personas);
+        const rech = r.rechazados || [];
+        await cargarHabilitaciones();
+        const m = document.getElementById("habMsg");
+        if (m) m.textContent = `${r.cargados} habilitado(s).` + (rech.length ? ` Rechazados (DNI o nivel inválido): ${rech.map((p) => p.dni || "?").join(", ")}.` : "");
+      } catch (e) {
+        msg.textContent = `No se pudo habilitar: ${e.message}.`;
+        btn.disabled = false;
+      }
+    });
+
+    const verBtn = document.getElementById("verHabs");
+    if (verBtn) verBtn.addEventListener("click", () => { habs.pedida = true; cargarHabilitaciones(); renderHabilitaciones(); });
+
+    document.getElementById("hMarca").addEventListener("change", () => {
+      habs.marca = document.getElementById("hMarca").value;
+      renderHabilitaciones();
+    });
+
+    appEl.querySelectorAll(".hab-quitar").forEach((btn) => btn.addEventListener("click", async () => {
+      if (!confirm("¿Quitar esta habilitación? La persona vuelve a necesitar aprobar los niveles anteriores.")) return;
+      btn.disabled = true;
+      try {
+        await ExamStore.borrarHabilitacion(Number(btn.dataset.id));
+        await cargarHabilitaciones();
+      } catch (e) {
+        alert(`No se pudo quitar: ${e.message}.`);
+        btn.disabled = false;
+      }
+    }));
+
+    // Primera visita con clave guardada: trae el listado.
+    if (!habs.filas && !habs.cargando && !habs.error && (ExamStore.tieneClave() || habs.pedida)) cargarHabilitaciones();
+  }
+
   // ---------- Formulario de examen: piezas reutilizables ----------
   // Los campos del examen en sí (sin los selects de a dónde pertenece):
   // se usan tanto en la vista de un local como en el "Cargar examen"
@@ -1595,6 +1747,7 @@
     const moverMatch = hash.match(/^#\/organigrama\/([^/]+)\/mover$/);
     const onlineMatch = hash === "#/examen-online";
     const citasMatch = hash === "#/citaciones";
+    const habsMatch = hash === "#/habilitaciones";
     const regionalMatch = hash.match(/^#\/organigrama\/([^/]+)\/([^/]+)$/);
     const brandMatch = hash.match(/^#\/organigrama\/([^/]+)$/);
 
@@ -1603,6 +1756,8 @@
       renderOnlinePanel();
     } else if (citasMatch) {
       renderCitaciones();
+    } else if (habsMatch) {
+      renderHabilitaciones();
     } else if (localMatch) {
       renderLocal(localMatch[1], localMatch[2], localMatch[3], localMatch[4]);
     } else if (moverMatch) {
@@ -1635,6 +1790,7 @@
     try {
       await ExamStore.retry();
       if (window.location.hash === "#/citaciones" && citas.filas) await cargarCitaciones();
+      if (window.location.hash === "#/habilitaciones" && habs.filas) await cargarHabilitaciones();
     } finally {
       sincronizando = false;
       updateSyncPill();
