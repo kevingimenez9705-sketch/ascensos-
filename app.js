@@ -281,10 +281,11 @@
     let locales = 0;
     ASCENSOS_DATA.brands.forEach((brand) => {
       const org = brand.organigrama;
-      people += 1;
+      // "grupo: true" = nodo que agrupa (ej. Mania Propios / Franquicias), no una persona.
+      if (!org.comercial.grupo) people += 1;
       if (org.comercial.asistente) people += 1;
       org.regionales.forEach((r) => {
-        people += 1;
+        if (!r.grupo) people += 1;
         if (r.asistente) people += 1;
         r.zonales.forEach((z) => {
           people += 1;
