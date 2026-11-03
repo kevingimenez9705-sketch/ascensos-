@@ -391,7 +391,7 @@ const ASCENSOS_DATA = {
                 role: "GTE Zonal",
                 phone: "11 3945-9178",
                 email: "tamara.migoya@saboresexpress.com.ar",
-                locales: ["Ciudadela (Mania)", "Isidro Casanova (Mania)", "Lanus 4", "Valentina Alsina", "Burzaco"],
+                locales: ["Lanus 4", "Valentina Alsina", "Burzaco"],
               },
             ],
           },
@@ -518,6 +518,63 @@ const ASCENSOS_DATA = {
                 phone: "11 2193 9543",
                 email: "agustina.sussi@saboresexpress.com.ar",
                 locales: ["Lomas del Mirador", "San Justo 1", "San Justo 2", "San Justo 3"],
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      id: "mania",
+      name: "Empanada Mania",
+      shortCode: "EM",
+      color: "#ea580c",
+      logoBg: "#ffedd5",
+      logoText: "#c2410c",
+      manager: {
+        name: "Propios y Franquicias",
+        role: "2 zonales",
+      },
+      // Organigrama Empanada Mania. Marca aparte de Sabores (exámenes "mania" en
+      // Examenes-Emi). Todavía no hay GTE Comercial ni Regional cargados: el primer
+      // nivel es la marca y el segundo separa Propios de Franquicias ("grupo: true"
+      // = no es una persona, no suma en el total de personas del Campus).
+      organigrama: {
+        comercial: {
+          name: "Empanada Mania",
+          role: "Propios y Franquicias",
+          grupo: true,
+        },
+        regionales: [
+          {
+            id: "mania-propios",
+            name: "Mania Propios",
+            role: "Locales propios",
+            grupo: true,
+            asistente: null,
+            zonales: [
+              {
+                id: "tamara-migoya",
+                name: "Tamara Migoya",
+                role: "GTE Zonal",
+                phone: "11 3945-9178",
+                email: "tamara.migoya@saboresexpress.com.ar",
+                locales: ["Ciudadela", "Isidro Casanova"],
+              },
+            ],
+          },
+          {
+            id: "mania-franquicias",
+            name: "Mania Franquicias",
+            role: "Franquicias",
+            grupo: true,
+            asistente: null,
+            zonales: [
+              {
+                id: "maria-jose-coceres",
+                name: "María José Cóceres",
+                role: "GTE Zonal",
+                locales: ["Del Viso", "Monte Castro"],
               },
             ],
           },

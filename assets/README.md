@@ -11,6 +11,7 @@ tocar código ni `data.js`, solo subir la imagen con el nombre exacto
 |---|---|
 | Hamburguesas Extremas | `assets/logos/hex.jpg` (o `.png`) |
 | Sabores Express | `assets/logos/sabores.jpg` (o `.png`) |
+| Empanada Mania | `assets/logos/mania.jpg` (o `.png`) |
 
 ## Fotos de personas (`assets/photos/`)
 
@@ -91,3 +92,10 @@ Un archivo por persona, nombrado `<marca>-<nombre-en-slug>.jpg`.
 | Malena Aguera | GTE Zonal | `assets/photos/sabores-malena-aguera.jpg` (o `.png`) |
 | Ariana Gomez | GTE Zonal | `assets/photos/sabores-ariana-gomez.jpg` (o `.png`) |
 | Agustina Sussi | GTE Zonal | `assets/photos/sabores-agustina-sussi.jpg` (o `.png`) |
+
+### Empanada Mania
+
+| Nombre | Rol | Archivo esperado |
+|---|---|---|
+| Tamara Migoya | GTE Zonal (Propios) | `assets/photos/mania-tamara-migoya.jpg` (o `.png`) |
+| María José Cóceres | GTE Zonal (Franquicias) | `assets/photos/mania-maria-jose-coceres.jpg` (o `.png`) |
