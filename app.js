@@ -288,7 +288,7 @@
         if (!r.grupo) people += 1;
         if (r.asistente) people += 1;
         r.zonales.forEach((z) => {
-          people += 1;
+          if (!z.grupo) people += 1;
           locales += z.locales.length;
         });
       });
@@ -768,7 +768,7 @@
           ${brandLogo(brand)}
           <div>
             <h2>${escapeHtml(localName)}</h2>
-            <p>${escapeHtml(zonal.name)} (GTE Zonal) · ${escapeHtml(regional.name)} · ${escapeHtml(brand.name)}</p>
+            <p>${escapeHtml(zonal.name)} (${escapeHtml(zonal.role || "GTE Zonal")}) · ${escapeHtml(regional.name)} · ${escapeHtml(brand.name)}</p>
           </div>
         </div>
         <button class="btn-primary" id="toggleFormBtn" style="--brand-color:${brand.color}">${icon("plus", { size: 14 })} Cargar examen</button>
