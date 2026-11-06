@@ -181,6 +181,24 @@ const ASCENSOS_DATA = {
               },
             ],
           },
+          // Locales nuevos o próximos a abrir que todavía no tienen zonal asignada.
+          // Cuando se sepa la zonal, mover el nombre al array "locales" de esa zonal.
+          {
+            id: "hex-sin-asignar",
+            name: "Sin asignar",
+            role: "Locales sin regional",
+            grupo: true,
+            asistente: null,
+            zonales: [
+              {
+                id: "hex-sin-zonal",
+                name: "Sin zonal",
+                role: "Pendiente de asignar",
+                grupo: true,
+                locales: ["Escobar", "Chilavert", "San Martin", "Cordoba"],
+              },
+            ],
+          },
         ],
       },
     },
@@ -518,6 +536,27 @@ const ASCENSOS_DATA = {
                 phone: "11 2193 9543",
                 email: "agustina.sussi@saboresexpress.com.ar",
                 locales: ["Lomas del Mirador", "San Justo 1", "San Justo 2", "San Justo 3"],
+              },
+            ],
+          },
+          // Locales nuevos o próximos a abrir que todavía no tienen zonal asignada.
+          // Cuando se sepa la zonal, mover el nombre al array "locales" de esa zonal.
+          {
+            id: "sabores-sin-asignar",
+            name: "Sin asignar",
+            role: "Locales sin regional",
+            grupo: true,
+            asistente: null,
+            zonales: [
+              {
+                id: "sabores-sin-zonal",
+                name: "Sin zonal",
+                role: "Pendiente de asignar",
+                grupo: true,
+                locales: [
+                  "Lacroze", "Villa Real", "Lugano", "Parque Chacabuco", "Palermo", "Flores 2",
+                  "Mar del Plata 6", "Campana", "Tandil", "Villa Maria", "Pergamino",
+                ],
               },
             ],
           },
