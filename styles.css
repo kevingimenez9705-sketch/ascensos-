@@ -393,6 +393,15 @@ body.intro-active .section-label {
   font-size: 17px;
   font-weight: 700;
 }
+.quicklink-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.quicklink-sub {
+  font-family: "Quicksand", "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--link-color, #666);
+}
 
 .team-grid {
   display: grid;

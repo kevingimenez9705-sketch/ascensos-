@@ -318,6 +318,9 @@
     { name: "Bloques A2", image: "assets/logos/quick-bloques.png", color: "#3949ab", href: "https://drive.google.com/drive/u/3/folders/1jt4Vv3jgvlqcAXFfQ9PSkwaUvD_aRLuX" },
     { name: "Organigramas", image: "assets/logos/quick-organigramas.png", color: "#2ea8dc", href: "https://drive.google.com/drive/u/3/folders/1VdwO7uJscKcv1NYLHoDoIi3-Oeyb4FhN" },
     { name: "Manuales", image: "assets/logos/quick-manuales.png", color: "#14577a", href: "https://drive.google.com/drive/u/3/folders/1o_q9nqF6GYvQtVtvVWRDrb3L4gx0QRVm" },
+    // Manuales operativos interactivos (repo Examenes-Emi): ingreso por DNI y contenido según el puesto.
+    { name: "Manual interactivo", sub: "Sabores Express", image: "assets/logos/quick-manual-sabores.png", color: "#b08a4e", href: "https://examenes-emi.vercel.app/manual/sabores.html" },
+    { name: "Manual interactivo", sub: "Extremas", image: "assets/logos/quick-manual-extremas.png", color: "#e3262f", href: "https://examenes-emi.vercel.app/manual/extremas.html" },
     { name: "Biblioteca de Capacitaciones", image: "assets/logos/quick-biblioteca.png", color: "#2b4c6f", href: null },
     { name: "Cronograma", image: "assets/logos/quick-cronograma.png", color: "#4f7cac", href: "https://drive.google.com/drive/folders/1WZSoQy1FUWbYL7t59VOnan_2ojABiwJg?usp=sharing" },
   ];
@@ -330,7 +333,9 @@
     const quickLinks = QUICK_LINKS.map((link) => {
       const inner = `
         <span class="quicklink-icon"><img src="${encodeURI(link.image)}" alt=""></span>
-        <span class="quicklink-name">${escapeHtml(link.name)}</span>`;
+        ${link.sub
+          ? `<span class="quicklink-text"><span class="quicklink-name">${escapeHtml(link.name)}</span><span class="quicklink-sub">${escapeHtml(link.sub)}</span></span>`
+          : `<span class="quicklink-name">${escapeHtml(link.name)}</span>`}`;
       return link.href
         ? `<a class="quicklink-card" style="--link-color:${link.color}" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
         : `<div class="quicklink-card quicklink-card-disabled" style="--link-color:${link.color}" title="Próximamente">${inner}</div>`;
